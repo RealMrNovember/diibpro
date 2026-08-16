@@ -491,7 +491,7 @@ function tSortRows(rows, cols, sort) {
   });
 }
 
-function dataTable(key, cols, rowsData, { renderBox }) {
+function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
   const s = tState(key, cols);
   const visible = s.order.map(id => cols.find(c => c.id === id)).filter(c => c && !s.hidden.includes(c.id));
   const sorted = tSortRows(rowsData, cols, s.sort);
@@ -499,7 +499,7 @@ function dataTable(key, cols, rowsData, { renderBox }) {
   const head = visible.map(c => `
     <th class="${c.num ? "r" : ""} th-sort" draggable="true" data-col="${c.id}">
       <span>${c.label}</span>${s.sort && s.sort.col === c.id ? (s.sort.dir === "desc" ? " ▼" : " ▲") : ""}
-    </th>`).join("") + "<th class='islem-th'>İşlem</th>";
+    </th>`).join("") + (noIslem ? "" : "<th class='islem-th'>İşlem</th>");
 
   // sayfalama
   const ps = s.pageSize; // 0 = tümü
@@ -510,7 +510,7 @@ function dataTable(key, cols, rowsData, { renderBox }) {
 
   const body = pageRows.map(r => `
     <tr>${visible.map(c => `<td class="${c.num ? "r" : ""}">${c.render ? c.render(r) : esc(r[c.id])}</td>`).join("")}
-    <td class="islem-td">${r._actions || ""}</td></tr>`).join("");
+    ${noIslem ? "" : `<td class="islem-td">${r._actions || ""}</td>`}</tr>`).join("");
 
   // toplam satırı — filtrelenmiş TÜM kayıtlar üzerinden (yalnızca görünen sayfa değil)
   let footCells = "", hasSum = false;
@@ -527,7 +527,7 @@ function dataTable(key, cols, rowsData, { renderBox }) {
       footCells += i === 0 ? `<td class="foot-lbl">TOPLAM (${sorted.length} kalem)</td>` : "<td></td>";
     }
   });
-  const foot = hasSum ? `<tfoot><tr>${footCells}<td class="islem-td"></td></tr></tfoot>` : "";
+  const foot = hasSum ? `<tfoot><tr>${footCells}${noIslem ? "" : "<td class='islem-td'></td>"}</tr></tfoot>` : "";
 
   const colMenu = cols.map(c => `
     <label class="colmenu-item"><input type="checkbox" data-col="${c.id}" ${s.hidden.includes(c.id) ? "" : "checked"}> ${c.label}</label>`).join("");
@@ -632,10 +632,10 @@ function dataTable(key, cols, rowsData, { renderBox }) {
 const TABLE_RERENDER = {};
 function rerenderTable(key) { if (TABLE_RERENDER[key]) TABLE_RERENDER[key](); }
 
-function buildKalemTable(key, cols, box, items, extra = "") {
-  const t = dataTable(key, cols, items, { renderBox: () => box });
+function buildKalemTable(key, cols, box, items, extra = "", opts = {}) {
+  const t = dataTable(key, cols, items, { renderBox: () => box, noIslem: opts.noIslem });
   box.innerHTML = `${extra}<div class="card">${t.html}</div>`;
-  TABLE_RERENDER[key] = () => buildKalemTable(key, cols, box, items, extra);
+  TABLE_RERENDER[key] = () => buildKalemTable(key, cols, box, items, extra, opts);
   t.wire();
 }
 
@@ -1532,7 +1532,101 @@ function renderRaporlar() {
         "Excel'deki İHR.FAT. SARF sayfasının karşılığı: her fatura kalemi için hammadde sarfları + alkol tipi/renk ayrımı (aynı renk, farklı alkol → farklı reçete) + reçete katsayı matrisi. 3 sayfalık set.")}
       ${raporKart("kapatma", "📦", "Kapatma Dosyası Seti",
         "Dört sayfalık set: taahhüt gerçekleşme, ithalat listesi, ihracat listesi, hammadde sarf/stok özeti — kapatma başvurusuna altlık.")}
-    </div>`;
+    </div>
+    <div class="page-head" style="margin-top:22px"><h2>⚗️ Canlı Sarf Tablosu — İHR.FAT. SARF</h2>
+      <p>Sistemdeki güncel kayıtlardan anlık hesaplanır: kayıt eklendiğinde / silindiğinde / düzenlendiğinde tablo kendiliğinden değişir</p></div>
+    <div class="filterbar with-kat" id="sarfFlt">
+      <input id="sf_q" placeholder="🔍 Ara: fatura, müşteri, ürün…" value="${esc(SARF_FLT.q || "")}">
+      <select id="sf_alkol">
+        <option value="">Tüm alkol tipleri</option>
+        ${AILELER.map(a => `<option value="${a}" ${SARF_FLT.alkol === a ? "selected" : ""}>${a}</option>`).join("")}
+      </select>
+      <select id="sf_renk">
+        <option value="">Tüm renkler</option>
+        ${["SİYAH", "BEYAZ", "ŞEFFAF", "DİĞER (RENKLİ)"].map(r => `<option value="${r}" ${SARF_FLT.renk === r ? "selected" : ""}>${r}</option>`).join("")}
+      </select>
+      <select id="sf_ulke" ${SARF_FLT.ulke ? "" : ""}>
+        <option value="">Tüm ülkeler</option>
+      </select>
+      <button class="ghost slim" id="sf_temizle">Temizle</button>
+    </div>
+    <div id="sarfTabloArea">${spinner()}</div>`;
+  SARF_DATA = null; // her sayfa açılışında güncel veriyi çek — tablo sistemdeki değişiklikleri anında yansıtır
+  wireSarfTablo();
+}
+
+/* --- canlı sarf tablosu (İHR.FAT. SARF karşılığı) --- */
+const SARF_FLT = { q: "", alkol: "", renk: "", ulke: "" };
+let SARF_DATA = null;
+
+async function wireSarfTablo() {
+  if (!SARF_DATA) {
+    try { SARF_DATA = await api("/api/rapor/sarf/veri"); }
+    catch (e) { $("#sarfTabloArea").innerHTML = `<p class="muted">Tablo yüklenemedi: ${esc(e.message)}</p>`; return; }
+  }
+  // ülke listesini doldur
+  const ulkeler = [...new Set(SARF_DATA.satirlar.map(r => r.ulke).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+  $("#sf_ulke").innerHTML = `<option value="">Tüm ülkeler</option>` +
+    ulkeler.map(u => `<option value="${esc(u)}" ${SARF_FLT.ulke === u ? "selected" : ""}>${esc(u)}</option>`).join("");
+
+  const draw = () => drawSarfTablo();
+  let t;
+  $("#sf_q").oninput = () => { clearTimeout(t); t = setTimeout(() => { SARF_FLT.q = $("#sf_q").value.trim(); draw(); }, 300); };
+  $("#sf_alkol").onchange = () => { SARF_FLT.alkol = $("#sf_alkol").value; draw(); };
+  $("#sf_renk").onchange = () => { SARF_FLT.renk = $("#sf_renk").value; draw(); };
+  $("#sf_ulke").onchange = () => { SARF_FLT.ulke = $("#sf_ulke").value; draw(); };
+  $("#sf_temizle").onclick = () => {
+    Object.assign(SARF_FLT, { q: "", alkol: "", renk: "", ulke: "" });
+    $("#sf_q").value = ""; $("#sf_alkol").value = ""; $("#sf_renk").value = ""; $("#sf_ulke").value = "";
+    draw();
+  };
+  drawSarfTablo();
+}
+
+function drawSarfTablo() {
+  const d = SARF_DATA;
+  const box = $("#sarfTabloArea");
+  if (!box) return;
+  const q = SARF_FLT.q.toLocaleLowerCase("tr");
+  const items = d.satirlar
+    .filter(r => !SARF_FLT.alkol || r.alkol === SARF_FLT.alkol)
+    .filter(r => !SARF_FLT.renk || r.renk === SARF_FLT.renk)
+    .filter(r => !SARF_FLT.ulke || r.ulke === SARF_FLT.ulke)
+    .filter(r => !q || `${r.fatura_no} ${r.musteri} ${r.urun_adi} ${r.diib_kodu}`.toLocaleLowerCase("tr").includes(q))
+    .map(r => {
+      const o = { ...r };
+      d.hammaddeler.forEach((h, i) => { o["h" + h.id] = r.sarflar[i] || 0; });
+      return o;
+    });
+
+  const cols = [
+    { id: "sira", label: "Sıra", num: true },
+    { id: "fatura_no", label: "Fatura No" },
+    { id: "tarih", label: "Tarih" },
+    { id: "musteri", label: "Müşteri" },
+    { id: "ulke", label: "Ülke" },
+    { id: "gtip", label: "GTİP" },
+    { id: "diib_kodu", label: "DİİB Satır Kodu" },
+    { id: "kalem_no", label: "Kalem No", num: true },
+    { id: "urun_adi", label: "Ürün Adı", render: r => `<b>${esc(r.urun_adi)}</b>` },
+    { id: "alkol", label: "Alkol Tipi", render: r => `<span class="badge b-aile">${esc(r.alkol)}</span>`, csv: r => r.alkol },
+    { id: "renk", label: "Renk" },
+    { id: "kg", label: "İhraç KG", num: true, sum: "kg", render: r => `<b>${fmt(r.kg)}</b>`, csv: r => r.kg },
+    ...d.hammaddeler.map(h => ({
+      id: "h" + h.id, label: `${h.ad}${h.yerli ? " (yerli)" : ""} sarf`,
+      num: true, sum: "kg",
+      render: r => r["h" + h.id] ? fmt(r["h" + h.id], 2) : "<span class='muted'>—</span>",
+      csv: r => r["h" + h.id] || 0,
+    })),
+  ];
+  const ozet = `<div class="kpis kalem-ozet">
+    <div class="kpi brand"><div class="v">${items.length}</div><div class="l">Kalem (filtreli)</div></div>
+    <div class="kpi"><div class="v">${new Set(items.map(r => r.fatura_no)).size}</div><div class="l">Fatura</div></div>
+    <div class="kpi ok"><div class="v">${fmt(items.reduce((a, r) => a + r.kg, 0))}</div><div class="l">İhraç KG</div></div>
+    <div class="kpi"><div class="v">${new Set(items.map(r => r.ulke).filter(Boolean)).size}</div><div class="l">Ülke</div></div>
+    <div class="kpi wide"><div class="v vsm">Belge: ${esc(d.belge_no)}</div><div class="l">Sarflar reçete katsayılarıyla anlık hesaplanır</div></div>
+  </div>`;
+  buildKalemTable("sarftablo", cols, box, items, ozet, { noIslem: true });
 }
 
 /* ================================================================ EVRAK ARŞİVİ */

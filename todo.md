@@ -26,6 +26,7 @@
   - *Alkol Tipi Özeti*: mamul grubu bazında toplamlar + alkol tipi ara toplamları — **aynı renk farklı alkol ayrımı** burada net görünür (örn. BEYAZ: etil 008→127.590 kg, metil 011→1.720 kg, isopropil 003→280 kg; reçeteler tamamen farklı)
   - *Reçete Katsayı Matrisi*: Excel'in 13-160. kolonlarındaki katsayı bloğunun okunur hali (grup × hammadde)
   - Renk, DİİB satır kodu grubundan türetilir (001/005/009=SİYAH, 003/008/011=BEYAZ, 004/006/012=ŞEFFAF, 002/007/010=DİĞER); alkol tipi mamul kategorisinden. Canlıda 3 formatta doğrulandı (2026-08-17)
+- [x] **Canlı Sarf Tablosu** — Raporlar sayfasına gömülü, İHR.FAT. SARF'ın açık/dinamik hali: sistemdeki güncel kayıtlardan anlık hesaplanır (kayıt ekle/sil/düzenle → tablo değişir). Arama + alkol tipi + renk + ülke filtreleri, KPI özet şeridi, 24 kolon (12 kimlik + 12 hammadde sarfı), sıralama/sütun düzeni/CSV/sayfalama, filtreye göre hammadde bazlı TOPLAM satırı. Veri ucu: `/api/rapor/sarf/veri` (rapor formatlarıyla aynı hesap çekirdeğini kullanır). Doğrulama: BEYAZ+Metil → yalnız titandioksit 774 kg + metil 946 kg; BEYAZ+Etil → tamamen farklı reçete seti (2026-08-17)
 
 - [x] Excel analizi: DİİB-4 tüm sayfalar + DİİB klasörü belgeleri (2026-08-16)
 - [x] Local MVP: FastAPI + SQLite, fotoğraf → çıkarım → stok/taahhüt akışı

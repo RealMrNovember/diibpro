@@ -182,8 +182,8 @@ GRUP_RENK = {
 }
 
 
-def build_sarf(user):
-    """İhracat Fatura Sarf Tablosu — Excel'deki 'İHR.FAT. SARF' sayfasının sistemleştirilmiş hali.
+def _sarf_veri(user):
+    """İHR.FAT. SARF verisinin ortak hesabı — hem rapor formatları hem canlı tablo (JSON) kullanır.
 
     Aynı renk farklı alkol tipiyle üretilebildiği için (örn. BEYAZ: etil bazlı 008,
     metil bazlı 011, isopropil bazlı 003) her kalem alkol tipi + renk ile ayrıştırılır;
@@ -212,8 +212,7 @@ def build_sarf(user):
                 ham_toplam[hid] += r["miktar_kg"] * kats
     ham = [h for h in ham if ham_toplam[h["id"]] > 0.005]
 
-    # ---- Sayfa 1: fatura kalemi bazında sarf dökümü (Excel'in birebir karşılığı) ----
-    s1, sira, onceki_fatura, toplam_kg = [], 0, None, 0.0
+    satirlar, sira, onceki_fatura, toplam_kg = [], 0, None, 0.0
     for r in kalemler:
         if r["fatura_no"] != onceki_fatura:
             sira += 1
@@ -221,9 +220,33 @@ def build_sarf(user):
         sarflar = [round(r["miktar_kg"] * recete.get(r["mamul_id"], {}).get(h["id"], 0), 2) or 0
                    for h in ham]
         toplam_kg += r["miktar_kg"]
-        s1.append([sira, r["fatura_no"], r["tarih"], r["musteri"], r["ulke"], r["gtip"],
-                   r["satir_kodu"], r["kalem_no"], r["urun_adi"] or r["mamul_ad"],
-                   r["kategori"], GRUP_RENK.get(r["grup"], "—"), r["miktar_kg"]] + sarflar)
+        satirlar.append({
+            "sira": sira, "fatura_no": r["fatura_no"], "tarih": r["tarih"],
+            "musteri": r["musteri"], "ulke": r["ulke"], "gtip": r["gtip"],
+            "diib_kodu": r["satir_kodu"], "kalem_no": r["kalem_no"],
+            "urun_adi": r["urun_adi"] or r["mamul_ad"], "alkol": r["kategori"],
+            "renk": GRUP_RENK.get(r["grup"], "—"), "kg": r["miktar_kg"],
+            "grup": r["grup"], "mamul_id": r["mamul_id"], "sarflar": sarflar,
+        })
+    mamuller = [dict(m) for m in conn.execute(
+        "SELECT * FROM mamul WHERE belge_id=? ORDER BY satir_kodu", (bid,))]
+    conn.close()
+    return {"belge": belge, "firma": firma, "ham": ham, "recete": recete,
+            "satirlar": satirlar, "toplam_kg": toplam_kg, "ham_toplam": ham_toplam,
+            "mamuller": mamuller}
+
+
+def build_sarf(user):
+    """İhracat Fatura Sarf Tablosu — Excel'deki 'İHR.FAT. SARF' sayfasının sistemleştirilmiş hali."""
+    v = _sarf_veri(user)
+    belge, firma, ham = v["belge"], v["firma"], v["ham"]
+    ham_toplam, toplam_kg = v["ham_toplam"], v["toplam_kg"]
+    recete = v["recete"]
+
+    # ---- Sayfa 1: fatura kalemi bazında sarf dökümü (Excel'in birebir karşılığı) ----
+    s1 = [[r["sira"], r["fatura_no"], r["tarih"], r["musteri"], r["ulke"], r["gtip"],
+           r["diib_kodu"], r["kalem_no"], r["urun_adi"], r["alkol"], r["renk"], r["kg"]]
+          + r["sarflar"] for r in v["satirlar"]]
     s1.append(["", "TOPLAM", "", "", "", "", "", "", "", "", "", round(toplam_kg, 2)]
               + [round(ham_toplam[h["id"]], 2) for h in ham])
     n = len(ham)
@@ -242,15 +265,16 @@ def build_sarf(user):
     }
 
     # ---- Sayfa 2: mamul grubu bazında özet — alkol tipi ara toplamlarıyla ----
+    mamul_ad = {m["id"]: m["ad"] for m in v["mamuller"]}
     grup_ozet = {}
-    for r in kalemler:
+    for r in v["satirlar"]:
         g = grup_ozet.setdefault(r["grup"], {
-            "satir_kodu": r["satir_kodu"], "ad": r["mamul_ad"], "kategori": r["kategori"],
-            "kalem": 0, "kg": 0.0, "sarf": {h["id"]: 0.0 for h in ham}})
+            "satir_kodu": r["diib_kodu"], "ad": mamul_ad.get(r["mamul_id"], r["urun_adi"]),
+            "kategori": r["alkol"], "kalem": 0, "kg": 0.0, "sarf": {h["id"]: 0.0 for h in ham}})
         g["kalem"] += 1
-        g["kg"] += r["miktar_kg"]
-        for h in ham:
-            g["sarf"][h["id"]] += r["miktar_kg"] * recete.get(r["mamul_id"], {}).get(h["id"], 0)
+        g["kg"] += r["kg"]
+        for h, sarf_kg in zip(ham, r["sarflar"]):
+            g["sarf"][h["id"]] += sarf_kg
 
     s2 = []
     kat_sira = ["Etil Alkollü", "İsopropil Alkollü", "Metil Alkollü (İstampa)",
@@ -285,7 +309,7 @@ def build_sarf(user):
 
     # ---- Sayfa 3: reçete katsayı matrisi (Excel'in 13-160. kolon bloğunun okunur hali) ----
     s3 = []
-    for m in conn.execute("SELECT * FROM mamul WHERE belge_id=? ORDER BY satir_kodu", (bid,)):
+    for m in v["mamuller"]:
         kats = recete.get(m["id"], {})
         s3.append([m["satir_kodu"], m["ad"], m["kategori"], GRUP_RENK.get(m["grup"], "—")]
                   + [(kats.get(h["id"], 0) or "") for h in ham])
@@ -300,12 +324,26 @@ def build_sarf(user):
                "Sarf kg = ihraç kg × katsayı.",
     }
 
-    conn.close()
     return {
         "baslik": "İHRACAT FATURA SARF TABLOSU (TASLAK)",
         "altbilgi": f"Belge: {belge['belge_no']} · {firma['unvan']} · Rapor tarihi: {date.today().isoformat()}",
         "dosya": f"ihracat-fatura-sarf-{belge['belge_no'].replace('/', '-')}",
         "sayfalar": [sayfa1, sayfa2, sayfa3],
+    }
+
+
+@router.get("/sarf/veri")
+def sarf_veri_json(user=Depends(auth.require_user)):
+    """Canlı sarf tablosu için JSON veri — Raporlar sayfasındaki gömülü dinamik tablo bunu kullanır."""
+    v = _sarf_veri(user)
+    return {
+        "belge_no": v["belge"]["belge_no"],
+        "hammaddeler": [{"id": h["id"], "ad": h["ad"], "yerli": h["yerli"]} for h in v["ham"]],
+        "satirlar": [{k: r[k] for k in ("sira", "fatura_no", "tarih", "musteri", "ulke", "gtip",
+                                        "diib_kodu", "kalem_no", "urun_adi", "alkol", "renk", "kg",
+                                        "sarflar")} for r in v["satirlar"]],
+        "toplam_kg": round(v["toplam_kg"], 2),
+        "ham_toplam": [round(v["ham_toplam"][h["id"]], 2) for h in v["ham"]],
     }
 
 
