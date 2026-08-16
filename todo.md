@@ -3,26 +3,21 @@
 > Bu dosya projenin canlı iş listesidir. Her geliştirme turunda güncellenir:
 > yeni işler eklenir, bitenler ✅ işaretlenir. Sıralama = öncelik.
 
-## 🟡 Sırada — kullanıcı teyidi / kararı bekleyenler
+## 📌 Kullanıcı kararları (kapalı — tekrar açma)
 
-- [ ] Admin parolası: **kullanıcı kendisi değiştirecek** (Profil → Parola Değiştir). Parolalar asla sorulmadan değiştirilmez.
-- [ ] Cloudflare SSL modu Full'e alınırsa origin https yönlendirmesini geri ekle
-- [ ] İhracat kalem tutarları not: kaynak Excel'de kalem fiyatı olmadığından fatura toplamı kg orantısıyla dağıtıldı (kayıt notlarında yazıyor) — gerçek kalem fiyatları girilirse düzenleme ekranından güncellenebilir
+- **Cloudflare olduğu gibi kalacak** (Flexible SSL). Subdomain üzerinde; diğer sistemleri etkilememek için dokunulmayacak. Origin'e https yönlendirmesi EKLENMEYECEK. (2026-08-17)
+- **Admin parolası sistem tamamen bitene kadar `matek2026` kalacak.** Değiştirilmeyecek; parolalar asla sorulmadan değiştirilmez. (2026-08-17)
+
+> Bilgi notu: İhracat kalem tutarları — kaynak Excel'de kalem fiyatı olmadığından fatura toplamı kg orantısıyla dağıtıldı (kayıt notlarında yazıyor); gerçek kalem fiyatları girilirse düzenleme ekranından güncellenebilir.
 
 ## 🟢 Yol haritası — SaaS fazı (docs/SAAS-MIMARI.md)
 
-- [ ] KDV istisna listesi raporu (maliye formatı — Excel'deki "KDV açısından maliye listesi" karşılığı)
-- [ ] TEV tablosu (EK-8) raporu — ihracat×ithalat eşleştirme, %6,5 hesap
-- [ ] Kapatma dosyası seti (taahhüt hesabı + kapanış dilekçesi çıktıları)
-- [ ] Uyarı motoru: belge süresi, taahhüt açığı, izin aşımı, eksi stok (+ e-posta)
-- [ ] TCMB EVDS kur servisi (kur alanı otomatik dolsun)
+- [ ] E-posta bildirimleri: uyarı motorundaki kritik uyarılar e-posta ile de gitsin (SMTP bilgisi gerekli)
 - [ ] DYS XML/Excel içe aktarım (sürükle-bırak)
-- [ ] Muhasebede döviz ayrıştırması (USD/EUR bakiyeleri ayrı; şu an tek havuz)
-- [ ] Deploy script (tek komut: paketle → yükle → restart)
-- [ ] Günlük veritabanı yedeği (cron, sunucuda)
+- [ ] e-Fatura XML alımı
 - [ ] PostgreSQL + Docker Compose geçişi (çok kiracılı ölçekleme)
 - [ ] Gümrük müşaviri paneli (çok firma görünümü)
-- [ ] e-Fatura XML alımı
+- [ ] Kapatma dilekçesi çıktısı (kapatma raporu setine resmî dilekçe şablonu eklenmesi)
 
 ## ✅ Tamamlananlar
 
