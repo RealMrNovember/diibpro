@@ -358,6 +358,30 @@ def _migrate(conn):
             conn.execute(f"ALTER TABLE {tablo} ADD COLUMN gtip TEXT DEFAULT ''")
         if "kalem_no" not in kcols:
             conn.execute(f"ALTER TABLE {tablo} ADD COLUMN kalem_no INTEGER")
+    # mamul ürün ailesi (etil alkollü / metil alkollü ...)
+    mcols = {r["name"] for r in conn.execute("PRAGMA table_info(mamul)")}
+    if "kategori" not in mcols:
+        conn.execute("ALTER TABLE mamul ADD COLUMN kategori TEXT DEFAULT ''")
+    for m in conn.execute("SELECT id, ad FROM mamul WHERE kategori='' OR kategori IS NULL").fetchall():
+        conn.execute("UPDATE mamul SET kategori=? WHERE id=?", (mamul_kategori(m["ad"]), m["id"]))
+
+
+def mamul_kategori(ad: str) -> str:
+    """Mamul adından ürün ailesi türet."""
+    s = ad.upper().replace("İ", "I").replace("i", "I")
+    if "METIL" in s or "ISTAMPA" in s or "iSTAMPA" in ad.upper():
+        return "Metil Alkollü (Istampa)"
+    if "ISOPROPIL" in s:
+        return "İsopropil Alkollü"
+    if "ETIL" in s:
+        return "Etil Alkollü"
+    if "LAK" in s:
+        return "Laklar"
+    if "KATKI" in s or "KATKi" in ad:
+        return "Katkı Maddeleri"
+    if "INCELTICI" in s or "THINNER" in s:
+        return "İncelticiler"
+    return "Diğer"
     # varsayılan birimler
     firma = conn.execute("SELECT id FROM firma LIMIT 1").fetchone()
     if firma and conn.execute("SELECT COUNT(*) c FROM birim").fetchone()["c"] == 0:

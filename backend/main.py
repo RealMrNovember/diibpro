@@ -18,6 +18,8 @@ from . import auth
 from . import db as dbm
 from . import erp
 from . import ocr as ocr_engine
+from . import rapor
+from . import servisler
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
@@ -36,6 +38,8 @@ app = FastAPI(title="DİİBPro")
 dbm.init_db()
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.include_router(erp.router)
+app.include_router(rapor.router)
+app.include_router(servisler.router)
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
 
@@ -531,10 +535,10 @@ def api_ihracat_list(user=Depends(auth.require_user), q: str = "", baslangic: st
 
 @app.get("/api/ihracat/kalemler")
 def api_ihracat_kalemler(user=Depends(auth.require_user), q: str = "", baslangic: str = "",
-                         bitis: str = "", kaynak: str = ""):
+                         bitis: str = "", kaynak: str = "", kategori: str = ""):
     conn = dbm.get_conn()
     belge = get_belge(conn, user)
-    sql = """SELECT k.id kalem_id, i.id ihracat_id, k.urun_adi, m.ad mamul_ad,
+    sql = """SELECT k.id kalem_id, i.id ihracat_id, k.urun_adi, m.ad mamul_ad, m.kategori,
                     m.satir_kodu diib_kodu,
                     COALESCE(NULLIF(k.gtip,''), m.gtip) gtip,
                     i.fatura_no, i.beyanname_no, i.tarih,
@@ -556,6 +560,8 @@ def api_ihracat_kalemler(user=Depends(auth.require_user), q: str = "", baslangic
         sql += " AND i.tarih <= ?"; params.append(bitis)
     if kaynak:
         sql += " AND i.kaynak = ?"; params.append(kaynak)
+    if kategori:
+        sql += " AND m.kategori = ?"; params.append(kategori)
     items = rows(conn.execute(sql + " ORDER BY i.tarih DESC, i.id DESC, k.id", params))
     conn.close()
     for it in items:
@@ -826,11 +832,11 @@ def app_page(request: Request):
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
-@app.get("/uploads/{name}")
+@app.get("/uploads/{name:path}")
 def uploaded_file(name: str, user=Depends(auth.require_user)):
-    safe = os.path.basename(name)
-    path = os.path.join(UPLOAD_DIR, safe)
-    if not os.path.exists(path):
+    # yol güvenliği: uploads dışına çıkışı engelle
+    path = os.path.normpath(os.path.join(UPLOAD_DIR, name))
+    if not path.startswith(os.path.normpath(UPLOAD_DIR)) or not os.path.isfile(path):
         raise HTTPException(404)
     return FileResponse(path)
 

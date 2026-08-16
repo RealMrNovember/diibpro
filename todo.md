@@ -3,11 +3,12 @@
 > Bu dosya projenin canlı iş listesidir. Her geliştirme turunda güncellenir:
 > yeni işler eklenir, bitenler ✅ işaretlenir. Sıralama = öncelik.
 
-## 🟡 Sırada — kullanıcı talepleri
+## 🟡 Sırada — kullanıcı teyidi / kararı bekleyenler
 
-- [ ] Hammadde kartlarına belge ithalat satır kodlarını (24.2.03798.xxx) işle (kullanıcıdan liste bekleniyor — İthalat tablosundaki "DİİB Kodu" kolonu bunun için boş)
-- [ ] Varsayılan admin parolası değişimi (kullanıcı yapacak / talep ederse sunucudan değiştirilecek)
+- [ ] Hammadde DİİB satır kodları teyidi: PİGMENT=.001 belgeden teyitli; .002-.009 önceki belgenin resmî sırasına göre atandı — **belgeden kontrol edilip yanlışsa Tanımlar'dan düzeltilmeli**
+- [ ] Admin parolası: **kullanıcı kendisi değiştirecek** (Profil → Parola Değiştir). Parolalar asla sorulmadan değiştirilmez.
 - [ ] Cloudflare SSL modu Full'e alınırsa origin https yönlendirmesini geri ekle
+- [ ] İhracat kalem tutarları not: kaynak Excel'de kalem fiyatı olmadığından fatura toplamı kg orantısıyla dağıtıldı (kayıt notlarında yazıyor) — gerçek kalem fiyatları girilirse düzenleme ekranından güncellenebilir
 
 ## 🟢 Yol haritası — SaaS fazı (docs/SAAS-MIMARI.md)
 

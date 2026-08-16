@@ -428,16 +428,21 @@ def isemri_update(eid: int, body: IsEmriDurum, user=Depends(auth.require_user)):
 
 
 # ================================================================ BİRİM ÖZETLERİ (panel)
+def _acik_by_doviz(conn, fid, tip):
+    return {r["doviz"]: round(r["s"], 2) for r in conn.execute(
+        """SELECT f.doviz, SUM(f.tutar - COALESCE((SELECT SUM(o.tutar) FROM odeme o WHERE o.fatura_id=f.id),0)) s
+           FROM fatura f WHERE f.firma_id=? AND f.tip=? AND f.durum != 'odendi'
+           GROUP BY f.doviz HAVING s > 0.01""", (fid, tip)).fetchall()}
+
+
 @router.get("/erp/ozet")
 def erp_ozet(user=Depends(auth.require_user)):
     conn = dbm.get_conn()
     fid = user["firma_id"]
-    acik_alacak = conn.execute(
-        """SELECT COALESCE(SUM(f.tutar - COALESCE((SELECT SUM(o.tutar) FROM odeme o WHERE o.fatura_id=f.id),0)),0) s
-           FROM fatura f WHERE f.firma_id=? AND f.tip='satis' AND f.durum != 'odendi'""", (fid,)).fetchone()["s"]
-    acik_borc = conn.execute(
-        """SELECT COALESCE(SUM(f.tutar - COALESCE((SELECT SUM(o.tutar) FROM odeme o WHERE o.fatura_id=f.id),0)),0) s
-           FROM fatura f WHERE f.firma_id=? AND f.tip='alis' AND f.durum != 'odendi'""", (fid,)).fetchone()["s"]
+    alacak_doviz = _acik_by_doviz(conn, fid, "satis")
+    borc_doviz = _acik_by_doviz(conn, fid, "alis")
+    acik_alacak = sum(alacak_doviz.values())
+    acik_borc = sum(borc_doviz.values())
     aktif_emir = conn.execute(
         "SELECT COUNT(*) c FROM is_emri WHERE firma_id=? AND durum IN ('planlandi','uretimde')", (fid,)).fetchone()["c"]
     son30_red = conn.execute(
@@ -450,6 +455,8 @@ def erp_ozet(user=Depends(auth.require_user)):
     return {
         "acik_alacak": round(acik_alacak, 2),
         "acik_borc": round(acik_borc, 2),
+        "alacak_doviz": alacak_doviz,
+        "borc_doviz": borc_doviz,
         "aktif_is_emri": aktif_emir,
         "kalite_son30_test": son30_test,
         "kalite_son30_red": son30_red,

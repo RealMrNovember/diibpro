@@ -59,7 +59,7 @@ main { padding: 14px 12px 24px; max-width: 780px; margin: 0 auto; }
   .side-foot { margin-top: auto; padding: 12px 10px 0; border-top: 1px solid rgba(255,255,255,.15); font-size: 12.5px; }
   .side-foot .linkbtn { background: none; border: 0; color: #9fd0f5; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 8px 0 0; }
   .content header { border-radius: 0; }
-  main { max-width: 980px; padding: 22px 26px 40px; margin: 0; }
+  main { max-width: none; width: 100%; padding: 22px 28px 44px; margin: 0; }
   .kpis { grid-template-columns: repeat(4, 1fr); }
 }
 
@@ -328,3 +328,44 @@ button.ghost.slim { width: auto; padding: 9px 14px; margin-top: 0; font-size: 13
   .side::-webkit-scrollbar-track { background: transparent; }
   .side-foot { padding-bottom: 14px; }
 }
+
+/* uyarı kartları */
+.uyari { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; border: 1px solid; }
+.uyari b { font-size: 13px; }
+.uyari span { font-size: 12px; opacity: .85; }
+.u-kritik { background: #fdecea; border-color: #f2c4bf; color: #8c2318; }
+.u-uyari { background: #fdf6e8; border-color: #f2e2bd; color: #7a5410; }
+.u-bilgi { background: #eef4fb; border-color: #cfe1f2; color: #1c4e79; }
+
+/* rapor kartları */
+.rapor-card h3 { font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--brand); }
+.rapor-card p { margin: 8px 0 12px; line-height: 1.5; }
+
+/* ürün ailesi rozeti + filtre düzeni */
+.badge.b-aile { background: #eef0fb; color: #4b4fa6; }
+@media (min-width: 1024px) { .filterbar.with-kat { grid-template-columns: 2fr 1fr 1fr 1.2fr 1fr auto; } }
+
+/* kur satırı */
+.kur-row { display: flex; gap: 6px; }
+.kur-row input { flex: 1; }
+.kur-row .ghost.slim { white-space: nowrap; }
+
+/* tam genişlik: tablo kabı ekranı kullanır, çok geniş ekranda içerik nefes payıyla büyür */
+@media (min-width: 1024px) {
+  .dt-wrap { max-height: calc(100vh - 300px); }
+  .tbl.xls { width: 100%; }
+}
+@media (min-width: 1800px) {
+  main { padding-left: 40px; padding-right: 40px; }
+}
+
+/* kategori chip'leri + rapor butonları */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip {
+  border: 1px solid var(--line); background: #fff; color: var(--muted);
+  padding: 7px 13px; border-radius: 20px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.chip:hover { border-color: var(--brand-2); color: var(--brand-2); }
+.chip.on { background: var(--brand-2); border-color: var(--brand-2); color: #fff; }
+.rapor-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+a.tico { text-decoration: none; display: inline-block; }

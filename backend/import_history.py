@@ -149,6 +149,11 @@ def import_ihracat(conn, wb, belge_id, mamul_by_kod):
             g = {"016": "006", "017": "007", "018": "008"}.get(g, g)
             mamul = next((m for k2, m in mamul_by_kod.items() if k2.endswith("." + g)), None) if g else None
         if not mamul:
+            # satır kodu boş: ürün adından aile tahmini (kayıt dışı kalmasın)
+            from .ocr import _guess_satir_kodu
+            tahmin = _guess_satir_kodu(urun_s, list(mamul_by_kod.values()))
+            mamul = mamul_by_kod.get(tahmin)
+        if not mamul:
             continue
         gtip_s = str(gtip or "").strip().replace(" ", "")
         fsn = int(_fsn) if isinstance(_fsn, (int, float)) else None
@@ -156,6 +161,27 @@ def import_ihracat(conn, wb, belge_id, mamul_by_kod):
             """INSERT INTO ihracat_kalem (ihracat_id, mamul_id, urun_adi, miktar_kg, gtip, kalem_no)
                VALUES (?,?,?,?,?,?)""",
             (current_id, mamul["id"], urun_s[:80], _num(kg), gtip_s, fsn))
+
+    # kalem tutarları: kaynak Excel'de kalem fiyatı yok → fatura toplamını kg orantısıyla dağıt
+    for ih in conn.execute(
+        "SELECT id, tutar FROM ihracat WHERE belge_id=? AND kaynak='excel-aktarim' AND tutar > 0", (belge_id,)).fetchall():
+        toplam_kg = conn.execute(
+            "SELECT COALESCE(SUM(miktar_kg),0) s FROM ihracat_kalem WHERE ihracat_id=?", (ih["id"],)).fetchone()["s"]
+        if toplam_kg <= 0:
+            continue
+        kalemler = conn.execute("SELECT id, miktar_kg FROM ihracat_kalem WHERE ihracat_id=?", (ih["id"],)).fetchall()
+        dagitilan = 0.0
+        for idx, k in enumerate(kalemler):
+            if idx == len(kalemler) - 1:
+                tutar = round(ih["tutar"] - dagitilan, 2)  # son kalem yuvarlama farkını alır
+            else:
+                tutar = round(ih["tutar"] * k["miktar_kg"] / toplam_kg, 2)
+            dagitilan += tutar
+            bf = round(tutar / k["miktar_kg"], 4) if k["miktar_kg"] else 0
+            conn.execute("UPDATE ihracat_kalem SET tutar=?, birim_fiyat=? WHERE id=?", (tutar, bf, k["id"]))
+        conn.execute(
+            """UPDATE ihracat SET notlar = CASE WHEN notlar='' THEN ? ELSE notlar END WHERE id=?""",
+            ("Kalem tutarları fatura toplamından kg orantısıyla dağıtılmıştır", ih["id"]))
     return count
 
 

@@ -54,9 +54,20 @@ function kalanGun() {
 /* ================================================================ PANEL */
 async function renderPanel() {
   view.innerHTML = spinner();
-  const [d, erp] = await Promise.all([api("/api/dashboard"), api("/api/erp/ozet")]);
-  d.erp = erp;
+  const [d, erp, uyari] = await Promise.all([
+    api("/api/dashboard"), api("/api/erp/ozet"), api("/api/uyarilar")]);
+  d.erp = erp; d.uyarilar = uyari;
   isDesktop() ? renderPanelDesktop(d) : renderPanelMobile(d);
+}
+
+function uyariHtml(list) {
+  if (!list || !list.length) return "";
+  const stil = { kritik: "u-kritik", uyari: "u-uyari", bilgi: "u-bilgi" };
+  const ikon = { kritik: "🛑", uyari: "⚠️", bilgi: "ℹ️" };
+  return `<div class="card"><h3>Uyarılar (${list.length})</h3>
+    ${list.map(u => `<div class="uyari ${stil[u.tip]}">
+      <b>${ikon[u.tip]} ${esc(u.baslik)}</b><span>${esc(u.detay)}</span></div>`).join("")}
+  </div>`;
 }
 
 function birimOzetHtml(e) {
@@ -111,6 +122,7 @@ function renderPanelDesktop(d) {
 
   view.innerHTML = `
     ${kpisHtml(d)}
+    ${uyariHtml(d.uyarilar)}
     ${birimOzetHtml(d.erp)}
     <div class="two-col">
       <div class="card">
@@ -152,6 +164,7 @@ function renderPanelMobile(d) {
     </div>`).join("");
   view.innerHTML = `
     ${kpisHtml(d)}
+    ${uyariHtml(d.uyarilar)}
     ${birimOzetHtml(d.erp)}
     ${d.aylik.length ? `<div class="card"><h3>Aylık İhracat</h3>${d.aylik.map(a =>
       `<div class="row"><div class="name"><b>${a.ay}</b></div><div class="num">${fmt(a.kg)} kg</div></div>`).join("")}</div>` : ""}
@@ -283,7 +296,12 @@ function renderDraftForm() {
           ${fieldHtml("f_mense", "Menşe", d.mense)}
           ${fieldHtml("f_doviz", "Döviz", d.doviz)}
           ${fieldHtml("f_tutar", "Toplam Tutar", d.toplam_tutar, "number")}
-          ${fieldHtml("f_kur", "Kur (TCMB)", d.kur, "number")}
+          <div class="field"><label>Kur (TCMB)</label>
+            <div class="kur-row">
+              <input id="f_kur" type="number" step="any" inputmode="decimal" value="${d.kur ?? ""}">
+              <button type="button" class="ghost slim" onclick="kurCek()" title="Tarihe göre TCMB satış kuru">🔄 Çek</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card"><h3>Kalemler (stoğa eklenecek)</h3>${kalems}
@@ -336,6 +354,17 @@ function renderDraftForm() {
   }
   fa.scrollIntoView({ behavior: "smooth" });
 }
+
+window.kurCek = async () => {
+  const tarih = $("#f_tarih")?.value || "";
+  const doviz = ($("#f_doviz")?.value || "USD").toUpperCase().replace("EURO", "EUR");
+  try {
+    const k = await api("/api/kur?tarih=" + tarih);
+    const v = k[doviz === "EUR" ? "EUR" : "USD"];
+    if (v) { $("#f_kur").value = v; toast(`TCMB ${doviz} satış: ${v} (${k.kaynak_tarih})`); }
+    else toast("Kur bulunamadı");
+  } catch (e) { toast("Kur alınamadı: " + e.message, 4000); }
+};
 
 window.delKalem = i => { syncDraftFromForm(); draft.kalemler.splice(i, 1); renderDraftForm(); };
 window.addKalem = () => {
@@ -566,12 +595,21 @@ function buildKalemTable(key, cols, box, items) {
 /* ================================================================ KAYIT LİSTELERİ */
 const FILTERS = { ithalat: {}, ihracat: {} };
 
+const AILELER = ["Etil Alkollü", "Metil Alkollü (Istampa)", "İsopropil Alkollü",
+                 "Laklar", "Katkı Maddeleri", "İncelticiler"];
+
 function filterBar(kind) {
   const f = FILTERS[kind];
-  return `<div class="filterbar">
+  const aileSel = kind === "ihracat" ? `
+    <select id="flt_kategori">
+      <option value="">Tüm ürün aileleri</option>
+      ${AILELER.map(a => `<option value="${a}" ${f.kategori === a ? "selected" : ""}>${a}</option>`).join("")}
+    </select>` : "";
+  return `<div class="filterbar ${kind === "ihracat" ? "with-kat" : ""}">
     <input id="flt_q" placeholder="🔍 Ara: beyanname, fatura, ${kind === "ithalat" ? "satıcı" : "müşteri"}…" value="${esc(f.q || "")}">
     <input id="flt_bas" type="date" value="${f.baslangic || ""}" title="Başlangıç">
     <input id="flt_bit" type="date" value="${f.bitis || ""}" title="Bitiş">
+    ${aileSel}
     <select id="flt_kaynak">
       <option value="">Tüm kaynaklar</option>
       <option value="excel-aktarim" ${f.kaynak === "excel-aktarim" ? "selected" : ""}>Arşiv (Excel)</option>
@@ -590,6 +628,7 @@ function wireFilters(kind, reload) {
     f.baslangic = $("#flt_bas").value;
     f.bitis = $("#flt_bit").value;
     f.kaynak = $("#flt_kaynak").value;
+    if ($("#flt_kategori")) f.kategori = $("#flt_kategori").value;
     reload();
   };
   let t;
@@ -597,6 +636,7 @@ function wireFilters(kind, reload) {
   $("#flt_bas").onchange = read;
   $("#flt_bit").onchange = read;
   $("#flt_kaynak").onchange = read;
+  if ($("#flt_kategori")) $("#flt_kategori").onchange = read;
   $("#flt_temizle").onclick = () => { FILTERS[kind] = {}; reload(true); };
 }
 
@@ -612,6 +652,7 @@ function qs(kind) {
   if (f.baslangic) p.set("baslangic", f.baslangic);
   if (f.bitis) p.set("bitis", f.bitis);
   if (f.kaynak) p.set("kaynak", f.kaynak);
+  if (f.kategori) p.set("kategori", f.kategori);
   const s = p.toString();
   return s ? "?" + s : "";
 }
@@ -687,6 +728,7 @@ async function renderIhracat(reset) {
 
 const IHR_COLS = [
   { id: "urun", label: "Ürün İsmi", render: r => `<b>${esc(r.urun_adi || r.mamul_ad)}</b>`, sortVal: r => r.urun_adi || r.mamul_ad, csv: r => r.urun_adi || r.mamul_ad },
+  { id: "kategori", label: "Ürün Ailesi", render: r => `<span class="badge b-aile">${esc(r.kategori)}</span>`, csv: r => r.kategori },
   { id: "fatura_no", label: "Fatura No", render: r => `${esc(r.fatura_no || "—")} ${kaynakBadge(r.kaynak)}`, csv: r => r.fatura_no },
   { id: "beyanname_no", label: "Beyanname No" },
   { id: "tarih", label: "Tarih" },
@@ -1291,8 +1333,8 @@ async function renderMuhasebe() {
   view.innerHTML = `
     <div class="page-head"><h2>Muhasebe</h2><p>Cari hesaplar · faturalar · tahsilat/ödeme</p></div>
     <div class="kpis">
-      <div class="kpi ok"><div class="v">$${fmt(ozet.acik_alacak)}</div><div class="l">Açık alacak (tahsil edilecek)</div></div>
-      <div class="kpi warn"><div class="v">$${fmt(ozet.acik_borc)}</div><div class="l">Açık borç (ödenecek)</div></div>
+      <div class="kpi ok"><div class="v">${Object.entries(ozet.alacak_doviz || {}).map(([d, t]) => `${fmt(t)} ${d}`).join(" · ") || "0"}</div><div class="l">Açık alacak (döviz bazında)</div></div>
+      <div class="kpi warn"><div class="v">${Object.entries(ozet.borc_doviz || {}).map(([d, t]) => `${fmt(t)} ${d}`).join(" · ") || "0"}</div><div class="l">Açık borç (döviz bazında)</div></div>
       <div class="kpi"><div class="v">${ozet.cari_sayisi}</div><div class="l">Cari hesap</div></div>
       <div class="kpi brand"><div class="v">${faturalar.length}</div><div class="l">Fatura kaydı</div></div>
     </div>
@@ -1370,10 +1412,147 @@ window.delFatura = async id => {
   catch (e) { toast("Hata: " + e.message, 4000); }
 };
 
+/* ================================================================ RAPORLAR */
+function raporKart(tip, ikon, ad, aciklama) {
+  return `<div class="card rapor-card">
+    <h3>${ikon} ${ad}</h3>
+    <p class="muted">${aciklama}</p>
+    <div class="rapor-btns">
+      <button class="primary slim" onclick="window.open('/api/rapor/${tip}?format=html','_blank')">👁 Görüntüle</button>
+      <button class="ghost slim" onclick="location.href='/api/rapor/${tip}?format=xlsx'">⬇ Excel</button>
+      <button class="ghost slim" onclick="window.open('/api/rapor/${tip}?format=pdf','_blank')">⬇ PDF</button>
+    </div>
+  </div>`;
+}
+
+function renderRaporlar() {
+  view.innerHTML = `
+    <div class="page-head"><h2>Raporlar</h2><p>Resmî çıktılar — müşavir/YMM onayına hazır taslaklar · Görüntüle / Excel / PDF</p></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">
+      ${raporKart("kdv", "🧾", "KDV İstisna Listesi",
+        "Her ihracat kalemi için DİİB'li girdi sarfları ve KDV ödemeksizin düşülecek TL tutar (son ithalat fiyatı × ithalat kuru). Maliyeye sunulan listenin karşılığıdır.")}
+      ${raporKart("tev", "⚖️", "TEV Tablosu (EK-8)",
+        "AB/STA ülkelerine ihracatta 3. ülke menşeli girdiler için telafi edici vergi hesabı (%6,5). İhracat-ithalat eşleştirmeli taslak tablo.")}
+      ${raporKart("kapatma", "📦", "Kapatma Dosyası Seti",
+        "Dört sayfalık set: taahhüt gerçekleşme, ithalat listesi, ihracat listesi, hammadde sarf/stok özeti — kapatma başvurusuna altlık.")}
+    </div>`;
+}
+
+/* ================================================================ EVRAK ARŞİVİ */
+const KAT_AD = {
+  "kapasite-raporu": "📋 Kapasite Raporu", "resmi-belge": "🏛️ Resmî Belge",
+  "basvuru": "📨 Başvuru", "belge-bilgi": "ℹ️ Belge Bilgisi",
+  "calisma-dosyasi": "📊 Çalışma Dosyası", "kaynak-veri": "💾 Kaynak Veri",
+  "beyanname": "🛃 Beyanname", "fatura": "🧾 Fatura", "diger": "📁 Diğer",
+};
+const EV_FILTRE = { q: "", kategori: "", tur: "" };
+let EV_ITEMS = [];
+
+const evIkon = u => ({ pdf: "📕", xlsx: "📗", xls: "📗", xlsm: "📗", csv: "📗",
+  docx: "📘", doc: "📘", png: "🖼️", jpg: "🖼️", jpeg: "🖼️", zip: "🗜️", xml: "📄" }[u] || "📄");
+const evTur = u => ({ pdf: "PDF", xlsx: "Excel", xls: "Excel", xlsm: "Excel", csv: "Excel",
+  docx: "Word", doc: "Word", png: "Görsel", jpg: "Görsel", jpeg: "Görsel", zip: "Arşiv", xml: "XML" }[u] || "Diğer");
+const evBoyut = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : b > 1024 ? Math.round(b / 1024) + " KB" : b + " B";
+
+async function renderEvraklar() {
+  view.innerHTML = spinner();
+  EV_ITEMS = await api("/api/evrak");
+  drawEvraklar();
+}
+
+function drawEvraklar() {
+  const f = EV_FILTRE;
+  const filt = EV_ITEMS.filter(e =>
+    (!f.kategori || e.kategori === f.kategori) &&
+    (!f.tur || evTur(e.uzanti) === f.tur) &&
+    (!f.q || (e.dosya_adi + " " + e.aciklama).toLocaleLowerCase("tr").includes(f.q.toLocaleLowerCase("tr"))));
+
+  const sayilar = {};
+  EV_ITEMS.forEach(e => sayilar[e.kategori] = (sayilar[e.kategori] || 0) + 1);
+  const chips = `<button class="chip ${!f.kategori ? "on" : ""}" onclick="evKat('')">Tümü (${EV_ITEMS.length})</button>`
+    + Object.entries(KAT_AD).filter(([k]) => sayilar[k])
+        .map(([k, ad]) => `<button class="chip ${f.kategori === k ? "on" : ""}" onclick="evKat('${k}')">${ad} (${sayilar[k]})</button>`).join("");
+
+  const turler = [...new Set(EV_ITEMS.map(e => evTur(e.uzanti)))].sort();
+  const satirlar = filt.map(e => `
+    <tr>
+      <td><b>${evIkon(e.uzanti)} ${esc(e.dosya_adi)}</b>${e.aciklama ? `<br><small class="muted">${esc(e.aciklama)}</small>` : ""}</td>
+      <td><span class="badge">${KAT_AD[e.kategori] || e.kategori}</span></td>
+      <td>${evTur(e.uzanti)}</td>
+      <td class="r">${evBoyut(e.boyut)}</td>
+      <td>${(e.created_at || "").slice(0, 10)}</td>
+      <td class="islem-td">
+        <a class="tico" title="Aç / Görüntüle" href="/uploads/arsiv/${encodeURIComponent(e.dosya_adi)}" target="_blank">👁️</a>
+        <a class="tico" title="İndir" href="/uploads/arsiv/${encodeURIComponent(e.dosya_adi)}" download>⬇️</a>
+        <button class="tico" title="Sil" onclick="evSil(${e.id}, '${esc(e.dosya_adi)}')">🗑️</button>
+      </td>
+    </tr>`).join("");
+
+  const kats = Object.entries(KAT_AD).map(([k, ad]) => `<option value="${k}">${ad}</option>`).join("");
+  view.innerHTML = `
+    <div class="page-head"><h2>Evrak Arşivi</h2>
+      <p>${EV_ITEMS.length} belge · ${evBoyut(EV_ITEMS.reduce((s, e) => s + e.boyut, 0))} — DİİB başvuru ve dönem evrakları</p></div>
+    <div class="chips">${chips}</div>
+    <div class="filterbar" style="grid-template-columns:2fr 1fr auto">
+      <input id="ev_q" placeholder="🔍 Evrak adı veya açıklamada ara…" value="${esc(f.q)}">
+      <select id="ev_tur"><option value="">Tüm türler</option>
+        ${turler.map(t => `<option ${f.tur === t ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <button class="ghost slim" id="ev_temizle">Temizle</button>
+    </div>
+    <div class="two-col" style="grid-template-columns:1fr">
+      <div class="card">
+        <p class="muted">${filt.length} evrak gösteriliyor</p>
+        <div class="scrollx"><table class="tbl xls">
+          <thead><tr><th>Evrak</th><th>Kategori</th><th>Tür</th><th class="r">Boyut</th><th>Eklenme</th><th>İşlem</th></tr></thead>
+          <tbody>${satirlar || "<tr><td colspan='6' class='muted'>Filtreye uyan evrak yok</td></tr>"}</tbody>
+        </table></div>
+      </div>
+      <details class="rec"><summary><span>＋ Evrak Yükle</span></summary>
+        <div class="body">
+          <div class="grid2">
+            <div class="field"><label>Dosya * (PDF, Office, görsel — maks. 60 MB)</label>
+              <input type="file" id="ev_dosya" accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.csv,.png,.jpg,.jpeg,.zip,.xml"></div>
+            <div class="field"><label>Kategori</label><select id="ev_kat">${kats}</select></div>
+          </div>
+          <div class="field"><label>Açıklama</label><input id="ev_acik" placeholder="örn. Kasım 2026 çıkış beyannamesi"></div>
+          <button class="primary slim" onclick="evYukle()">Arşive Ekle</button>
+        </div>
+      </details>
+    </div>
+    <p class="muted mt8">Not: Kişisel veri içeren belgeler (kimlik vb.) KVKK gereği arşive eklenmemelidir.</p>`;
+
+  let t;
+  $("#ev_q").oninput = e => { clearTimeout(t); t = setTimeout(() => { EV_FILTRE.q = e.target.value; drawEvraklar(); }, 300); };
+  $("#ev_tur").onchange = e => { EV_FILTRE.tur = e.target.value; drawEvraklar(); };
+  $("#ev_temizle").onclick = () => { Object.assign(EV_FILTRE, { q: "", kategori: "", tur: "" }); drawEvraklar(); };
+}
+
+window.evKat = k => { EV_FILTRE.kategori = k; drawEvraklar(); };
+window.evSil = async (id, ad) => {
+  if (!confirm(`"${ad}" arşivden silinsin mi? Dosya da kaldırılır.`)) return;
+  try {
+    await api("/api/evrak/" + id, { method: "DELETE" });
+    toast("Evrak silindi"); renderEvraklar();
+  } catch (e) { toast("Hata: " + e.message, 4000); }
+};
+window.evYukle = async () => {
+  const inp = $("#ev_dosya");
+  if (!inp.files.length) return toast("Dosya seçin");
+  const fd = new FormData();
+  fd.append("dosya", inp.files[0]);
+  fd.append("kategori", $("#ev_kat").value);
+  fd.append("aciklama", $("#ev_acik").value);
+  try {
+    await api("/api/evrak", { method: "POST", body: fd });
+    toast("✅ Evrak arşive eklendi"); renderEvraklar();
+  } catch (e) { toast("Hata: " + e.message, 4000); }
+};
+
 /* ================================================================ NAV */
 const tabs = { panel: renderPanel, yeni: renderYeni, ithalat: renderIthalat, ihracat: renderIhracat,
                tanimlar: renderTanimlar, yonetim: renderYonetim, profil: renderProfil,
-               depo: renderDepo, uretim: renderUretim, kalite: renderKalite, muhasebe: renderMuhasebe };
+               depo: renderDepo, uretim: renderUretim, kalite: renderKalite, muhasebe: renderMuhasebe,
+               raporlar: renderRaporlar, evraklar: renderEvraklar };
 
 function switchTab(name) {
   $$("[data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
