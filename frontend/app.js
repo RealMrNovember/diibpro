@@ -468,14 +468,18 @@ function tState(key, cols) {
     const order = (saved.order || defOrder).filter(id => defOrder.includes(id));
     defOrder.forEach(id => { if (!order.includes(id)) order.push(id); });
     TSTATE[key] = { order, hidden: saved.hidden || [], sort: saved.sort || null,
-                    pageSize: saved.pageSize != null ? saved.pageSize : 50, page: 1 };
+                    pageSize: saved.pageSize != null ? saved.pageSize : 50, page: 1,
+                    widths: saved.widths || {}, sel: new Set() };
   }
+  if (!TSTATE[key].sel) TSTATE[key].sel = new Set();
+  if (!TSTATE[key].widths) TSTATE[key].widths = {};
   return TSTATE[key];
 }
 
 function tSave(key) {
   const s = TSTATE[key];
-  localStorage.setItem(tKey(key), JSON.stringify({ order: s.order, hidden: s.hidden, sort: s.sort, pageSize: s.pageSize }));
+  localStorage.setItem(tKey(key), JSON.stringify({ order: s.order, hidden: s.hidden, sort: s.sort,
+                                                   pageSize: s.pageSize, widths: s.widths }));
 }
 
 function tSortRows(rows, cols, sort) {
@@ -491,14 +495,35 @@ function tSortRows(rows, cols, sort) {
   });
 }
 
-function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
+function dataTable(key, cols, rowsData, { renderBox, noIslem, secim, rowId, topluIslemler }) {
   const s = tState(key, cols);
   const visible = s.order.map(id => cols.find(c => c.id === id)).filter(c => c && !s.hidden.includes(c.id));
-  const sorted = tSortRows(rowsData, cols, s.sort);
 
-  const head = visible.map(c => `
+  // satır kimliği (toplu seçim için) — kalem_id / id / dizi sırası
+  const rid = r => rowId ? rowId(r) : (r.kalem_id ?? r.id ?? rowsData.indexOf(r));
+  const sorted = tSortRows(rowsData, cols, s.sort);
+  // artık listede olmayan seçimleri temizle
+  if (secim && s.sel.size) {
+    const mevcut = new Set(rowsData.map(rid));
+    [...s.sel].forEach(x => { if (!mevcut.has(x)) s.sel.delete(x); });
+  }
+
+  // sütun genişlikleri — nth-child ile hem th hem td'ye uygulanır (seçim kolonu ofseti dahil)
+  const selOfs = secim ? 1 : 0;
+  const stil = visible.map((c, i) => {
+    const w = s.widths[c.id];
+    if (!w) return "";
+    const n = i + 1 + selOfs;
+    return `#dtw-${key} th:nth-child(${n}), #dtw-${key} td:nth-child(${n})
+            { width:${w}px; min-width:${w}px; max-width:${w}px; overflow:hidden; text-overflow:ellipsis; }`;
+  }).join("\n");
+
+  const tumSecili = secim && sorted.length > 0 && sorted.every(r => s.sel.has(rid(r)));
+  const selTh = secim ? `<th class="sel-th"><input type="checkbox" id="dt-selall-${key}" ${tumSecili ? "checked" : ""} title="Tümünü seç (filtredeki ${sorted.length} kayıt)"></th>` : "";
+  const head = selTh + visible.map(c => `
     <th class="${c.num ? "r" : ""} th-sort" draggable="true" data-col="${c.id}">
       <span>${c.label}</span>${s.sort && s.sort.col === c.id ? (s.sort.dir === "desc" ? " ▼" : " ▲") : ""}
+      <span class="col-rez" data-col="${c.id}" title="Genişliği sürükleyerek ayarla"></span>
     </th>`).join("") + (noIslem ? "" : "<th class='islem-th'>İşlem</th>");
 
   // sayfalama
@@ -509,7 +534,9 @@ function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
   const pageRows = ps ? sorted.slice((s.page - 1) * ps, s.page * ps) : sorted;
 
   const body = pageRows.map(r => `
-    <tr>${visible.map(c => `<td class="${c.num ? "r" : ""}">${c.render ? c.render(r) : esc(r[c.id])}</td>`).join("")}
+    <tr class="${secim && s.sel.has(rid(r)) ? "sel-row" : ""}">
+    ${secim ? `<td class="sel-td"><input type="checkbox" class="dt-selcb" data-rid="${rid(r)}" ${s.sel.has(rid(r)) ? "checked" : ""}></td>` : ""}
+    ${visible.map(c => `<td class="${c.num ? "r" : ""}">${c.render ? c.render(r) : esc(r[c.id])}</td>`).join("")}
     ${noIslem ? "" : `<td class="islem-td">${r._actions || ""}</td>`}</tr>`).join("");
 
   // toplam satırı — filtrelenmiş TÜM kayıtlar üzerinden (yalnızca görünen sayfa değil)
@@ -527,7 +554,7 @@ function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
       footCells += i === 0 ? `<td class="foot-lbl">TOPLAM (${sorted.length} kalem)</td>` : "<td></td>";
     }
   });
-  const foot = hasSum ? `<tfoot><tr>${footCells}${noIslem ? "" : "<td class='islem-td'></td>"}</tr></tfoot>` : "";
+  const foot = hasSum ? `<tfoot><tr>${secim ? "<td></td>" : ""}${footCells}${noIslem ? "" : "<td class='islem-td'></td>"}</tr></tfoot>` : "";
 
   const colMenu = cols.map(c => `
     <label class="colmenu-item"><input type="checkbox" data-col="${c.id}" ${s.hidden.includes(c.id) ? "" : "checked"}> ${c.label}</label>`).join("");
@@ -547,9 +574,20 @@ function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
       </div>
     </div>`;
 
+  const secSayisi = secim ? s.sel.size : 0;
+  const topluBar = (secim && secSayisi > 0) ? `
+    <div class="dt-bulk">
+      <span><b>${secSayisi}</b> kayıt seçildi</span>
+      <div class="dt-right">
+        ${(topluIslemler || []).map((t, i) => `<button class="${t.tehlike ? "danger-link" : "ghost slim"}" id="dt-bulk-${key}-${i}">${t.etiket}</button>`).join("")}
+        <button class="ghost slim" id="dt-bulk-clear-${key}">Seçimi Temizle</button>
+      </div>
+    </div>` : "";
+
   const html = `
+    ${stil ? `<style>${stil}</style>` : ""}
     <div class="dt-tools">
-      <span class="muted">Başlığa tıkla: sırala · başlığı sürükle: yer değiştir — düzen hesabına kaydedilir</span>
+      <span class="muted">Başlığa tıkla: sırala · sürükle: sütun sırasını değiştir · kenarından çek: genişlik ayarla</span>
       <div class="dt-right">
         <button class="ghost slim" id="dt-csv-${key}">⬇ CSV</button>
         <div class="colmenu-wrap">
@@ -559,7 +597,8 @@ function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
         </div>
       </div>
     </div>
-    <div class="scrollx dt-wrap"><table class="tbl xls">
+    ${topluBar}
+    <div class="scrollx dt-wrap" id="dtw-${key}"><table class="tbl xls">
       <thead><tr>${head}</tr></thead><tbody>${body}</tbody>${foot}
     </table></div>
     ${pager}`;
@@ -592,6 +631,67 @@ function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
         tSave(key); rerenderTable(key);
       };
     });
+    // sütun genişliği ayarlama (kenardan çekerek)
+    $$(".col-rez", box).forEach(handle => {
+      handle.onmousedown = e => {
+        e.preventDefault(); e.stopPropagation();
+        const th = handle.closest("th");
+        const startX = e.clientX, startW = th.getBoundingClientRect().width;
+        const onMove = ev => {
+          const w = Math.max(50, Math.round(startW + (ev.clientX - startX)));
+          s.widths[handle.dataset.col] = w;
+          let styleEl = $(`#dtw-${key}-rez`);
+          if (!styleEl) { styleEl = document.createElement("style"); styleEl.id = `dtw-${key}-rez`; document.head.appendChild(styleEl); }
+          const selOfs2 = secim ? 1 : 0;
+          const idx = visible.findIndex(c => c.id === handle.dataset.col) + 1 + selOfs2;
+          styleEl.textContent = `#dtw-${key} th:nth-child(${idx}), #dtw-${key} td:nth-child(${idx}) { width:${w}px; min-width:${w}px; max-width:${w}px; overflow:hidden; text-overflow:ellipsis; }`;
+        };
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          tSave(key);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      };
+      // dokunmatik cihazlar için
+      handle.ontouchstart = e => {
+        e.stopPropagation();
+        const th = handle.closest("th");
+        const startX = e.touches[0].clientX, startW = th.getBoundingClientRect().width;
+        const onMove = ev => {
+          const w = Math.max(50, Math.round(startW + (ev.touches[0].clientX - startX)));
+          s.widths[handle.dataset.col] = w;
+        };
+        const onEnd = () => {
+          document.removeEventListener("touchmove", onMove);
+          document.removeEventListener("touchend", onEnd);
+          tSave(key); rerenderTable(key);
+        };
+        document.addEventListener("touchmove", onMove);
+        document.addEventListener("touchend", onEnd);
+      };
+    });
+    // toplu seçim
+    if (secim) {
+      const selAll = $(`#dt-selall-${key}`, box);
+      if (selAll) selAll.onchange = () => {
+        if (selAll.checked) sorted.forEach(r => s.sel.add(rid(r)));
+        else sorted.forEach(r => s.sel.delete(rid(r)));
+        rerenderTable(key);
+      };
+      $$(".dt-selcb", box).forEach(cb => cb.onchange = () => {
+        const id = /^\d+$/.test(cb.dataset.rid) ? +cb.dataset.rid : cb.dataset.rid;
+        if (cb.checked) s.sel.add(id); else s.sel.delete(id);
+        rerenderTable(key);
+      });
+      const clearBtn = $(`#dt-bulk-clear-${key}`, box);
+      if (clearBtn) clearBtn.onclick = () => { s.sel.clear(); rerenderTable(key); };
+      (topluIslemler || []).forEach((t, i) => {
+        const btn = $(`#dt-bulk-${key}-${i}`, box);
+        if (btn) btn.onclick = () => t.calistir([...s.sel]);
+      });
+    }
     // sütun menüsü
     const menu = $(`#dt-menu-${key}`, box);
     $(`#dt-cols-${key}`, box).onclick = e => { e.stopPropagation(); menu.classList.toggle("open"); };
@@ -630,10 +730,23 @@ function dataTable(key, cols, rowsData, { renderBox, noIslem }) {
 }
 
 const TABLE_RERENDER = {};
-function rerenderTable(key) { if (TABLE_RERENDER[key]) TABLE_RERENDER[key](); }
+function rerenderTable(key) {
+  if (!TABLE_RERENDER[key]) return;
+  // sütun sırası/genişliği/seçim değişince tablo (ve sayfa) başa kaymasın — kaydırma konumunu koru
+  const wrap = $(`#dtw-${key}`);
+  const scrollLeft = wrap ? wrap.scrollLeft : 0;
+  const pageY = window.scrollY;
+  TABLE_RERENDER[key]();
+  const wrap2 = $(`#dtw-${key}`);
+  if (wrap2) wrap2.scrollLeft = scrollLeft;
+  window.scrollTo({ top: pageY });
+}
 
 function buildKalemTable(key, cols, box, items, extra = "", opts = {}) {
-  const t = dataTable(key, cols, items, { renderBox: () => box, noIslem: opts.noIslem });
+  const t = dataTable(key, cols, items, {
+    renderBox: () => box, noIslem: opts.noIslem, secim: opts.secim,
+    rowId: opts.rowId, topluIslemler: opts.topluIslemler,
+  });
   box.innerHTML = `${extra}<div class="card">${t.html}</div>`;
   TABLE_RERENDER[key] = () => buildKalemTable(key, cols, box, items, extra, opts);
   t.wire();
@@ -762,7 +875,8 @@ async function loadIthalatList() {
     });
     window._kalemRows = window._kalemRows || {};
     window._kalemRows.ithalat = items;
-    buildKalemTable("ithalat", ITH_COLS, box, items, kalemOzet("ithalat", items));
+    buildKalemTable("ithalat", ITH_COLS, box, items, kalemOzet("ithalat", items),
+      { secim: true, rowId: r => r.kalem_id, topluIslemler: topluIslemleriKalem("ithalat", loadIthalatList) });
     return;
   }
   {
@@ -824,7 +938,8 @@ async function loadIhracatList() {
     });
     window._kalemRows = window._kalemRows || {};
     window._kalemRows.ihracat = items;
-    buildKalemTable("ihracat", IHR_COLS, box, items, kalemOzet("ihracat", items));
+    buildKalemTable("ihracat", IHR_COLS, box, items, kalemOzet("ihracat", items),
+      { secim: true, rowId: r => r.kalem_id, topluIslemler: topluIslemleriKalem("ihracat", loadIhracatList) });
     return;
   }
   {
@@ -870,6 +985,44 @@ window.delKalemRow = async (kind, kid) => {
     kind === "ithalat" ? loadIthalatList() : loadIhracatList();
   } catch (e) { toast("Hata: " + e.message, 4000); }
 };
+
+/* --- ithalat/ihracat kalem tabloları için toplu işlemler --- */
+function topluIslemleriKalem(kind, reload) {
+  return [
+    {
+      etiket: "🗑️ Seçilenleri Sil", tehlike: true,
+      calistir: async ids => {
+        if (!confirm(`${ids.length} kalem silinsin mi? Stok/sarf etkisi her biri için geri alınır.`)) return;
+        let basarili = 0, hata = 0;
+        for (const kid of ids) {
+          try { await api(`/api/${kind}/kalem/${kid}`, { method: "DELETE" }); basarili++; }
+          catch { hata++; }
+        }
+        toast(hata ? `${basarili} kalem silindi, ${hata} tanesi başarısız oldu` : `${basarili} kalem silindi`, 4000);
+        TSTATE[kind] && TSTATE[kind].sel.clear();
+        reload();
+      },
+    },
+    {
+      etiket: "⬇ Seçilenleri CSV İndir",
+      calistir: ids => {
+        const rows = (window._kalemRows[kind] || []).filter(r => ids.includes(r.kalem_id));
+        const cols = kind === "ithalat" ? ITH_COLS : IHR_COLS;
+        const sep = ";";
+        const lines = [cols.map(c => `"${c.label}"`).join(sep)];
+        rows.forEach(r => lines.push(cols.map(c => {
+          const v = c.csv ? c.csv(r) : (r[c.id] ?? "");
+          return `"${String(v).replace(/"/g, '""')}"`;
+        }).join(sep)));
+        const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${kind}-secili-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+      },
+    },
+  ];
+}
 
 window.editKalem = (kind, kid) => {
   const r = (window._kalemRows?.[kind] || []).find(x => x.kalem_id === kid);
@@ -1665,20 +1818,6 @@ function drawEvraklar() {
         .map(([k, ad]) => `<button class="chip ${f.kategori === k ? "on" : ""}" onclick="evKat('${k}')">${ad} (${sayilar[k]})</button>`).join("");
 
   const turler = [...new Set(EV_ITEMS.map(e => evTur(e.uzanti)))].sort();
-  const satirlar = filt.map(e => `
-    <tr>
-      <td><b>${evIkon(e.uzanti)} ${esc(e.dosya_adi)}</b>${e.aciklama ? `<br><small class="muted">${esc(e.aciklama)}</small>` : ""}</td>
-      <td><span class="badge">${KAT_AD[e.kategori] || e.kategori}</span></td>
-      <td>${evTur(e.uzanti)}</td>
-      <td class="r">${evBoyut(e.boyut)}</td>
-      <td>${(e.created_at || "").slice(0, 10)}</td>
-      <td class="islem-td">
-        <a class="tico" title="Aç / Görüntüle" href="/uploads/arsiv/${encodeURIComponent(e.dosya_adi)}" target="_blank">👁️</a>
-        <a class="tico" title="İndir" href="/uploads/arsiv/${encodeURIComponent(e.dosya_adi)}" download>⬇️</a>
-        <button class="tico" title="Sil" onclick="evSil(${e.id}, '${esc(e.dosya_adi)}')">🗑️</button>
-      </td>
-    </tr>`).join("");
-
   const kats = Object.entries(KAT_AD).map(([k, ad]) => `<option value="${k}">${ad}</option>`).join("");
   view.innerHTML = `
     <div class="page-head"><h2>Evrak Arşivi</h2>
@@ -1691,13 +1830,7 @@ function drawEvraklar() {
       <button class="ghost slim" id="ev_temizle">Temizle</button>
     </div>
     <div class="two-col" style="grid-template-columns:1fr">
-      <div class="card">
-        <p class="muted">${filt.length} evrak gösteriliyor</p>
-        <div class="scrollx"><table class="tbl xls">
-          <thead><tr><th>Evrak</th><th>Kategori</th><th>Tür</th><th class="r">Boyut</th><th>Eklenme</th><th>İşlem</th></tr></thead>
-          <tbody>${satirlar || "<tr><td colspan='6' class='muted'>Filtreye uyan evrak yok</td></tr>"}</tbody>
-        </table></div>
-      </div>
+      <div id="evTabloArea"></div>
       <details class="rec"><summary><span>＋ Evrak Yükle</span></summary>
         <div class="body">
           <div class="grid2">
@@ -1712,10 +1845,48 @@ function drawEvraklar() {
     </div>
     <p class="muted mt8">Not: Kişisel veri içeren belgeler (kimlik vb.) KVKK gereği arşive eklenmemelidir.</p>`;
 
+  const box = $("#evTabloArea");
+  filt.forEach(e => {
+    e._actions = `
+      <a class="tico" title="Aç / Görüntüle" href="/uploads/arsiv/${encodeURIComponent(e.dosya_adi)}" target="_blank">👁️</a>
+      <a class="tico" title="İndir" href="/uploads/arsiv/${encodeURIComponent(e.dosya_adi)}" download>⬇️</a>
+      <button class="tico" title="Sil" onclick="evSil(${e.id}, '${esc(e.dosya_adi)}')">🗑️</button>`;
+  });
+  buildKalemTable("evrak", EV_COLS, box, filt,
+    `<p class="muted">${filt.length} evrak gösteriliyor</p>`,
+    { secim: true, rowId: r => r.id, topluIslemler: topluIslemleriEvrak() });
+
   let t;
   $("#ev_q").oninput = e => { clearTimeout(t); t = setTimeout(() => { EV_FILTRE.q = e.target.value; drawEvraklar(); }, 300); };
   $("#ev_tur").onchange = e => { EV_FILTRE.tur = e.target.value; drawEvraklar(); };
   $("#ev_temizle").onclick = () => { Object.assign(EV_FILTRE, { q: "", kategori: "", tur: "" }); drawEvraklar(); };
+}
+
+const EV_COLS = [
+  { id: "dosya_adi", label: "Evrak", render: e => `<b>${evIkon(e.uzanti)} ${esc(e.dosya_adi)}</b>${e.aciklama ? `<br><small class="muted">${esc(e.aciklama)}</small>` : ""}` },
+  { id: "kategori", label: "Kategori", render: e => `<span class="badge">${esc(KAT_AD[e.kategori] || e.kategori)}</span>`, csv: e => KAT_AD[e.kategori] || e.kategori },
+  { id: "uzanti", label: "Tür", render: e => evTur(e.uzanti), csv: e => evTur(e.uzanti) },
+  { id: "boyut", label: "Boyut", num: true, render: e => evBoyut(e.boyut), csv: e => e.boyut },
+  { id: "created_at", label: "Eklenme", render: e => (e.created_at || "").slice(0, 10) },
+];
+
+function topluIslemleriEvrak() {
+  return [
+    {
+      etiket: "🗑️ Seçilenleri Sil", tehlike: true,
+      calistir: async ids => {
+        if (!confirm(`${ids.length} evrak arşivden silinsin mi? Dosyalar da kaldırılır.`)) return;
+        let basarili = 0, hata = 0;
+        for (const id of ids) {
+          try { await api("/api/evrak/" + id, { method: "DELETE" }); basarili++; }
+          catch { hata++; }
+        }
+        toast(hata ? `${basarili} evrak silindi, ${hata} tanesi başarısız oldu` : `${basarili} evrak silindi`, 4000);
+        TSTATE.evrak && TSTATE.evrak.sel.clear();
+        renderEvraklar();
+      },
+    },
+  ];
 }
 
 window.evKat = k => { EV_FILTRE.kategori = k; drawEvraklar(); };
@@ -1745,14 +1916,23 @@ const tabs = { panel: renderPanel, yeni: renderYeni, ithalat: renderIthalat, ihr
                depo: renderDepo, uretim: renderUretim, kalite: renderKalite, muhasebe: renderMuhasebe,
                raporlar: renderRaporlar, evraklar: renderEvraklar };
 
-function switchTab(name) {
+let currentTab = "panel";
+function switchTab(name, { fromHash } = {}) {
+  if (!tabs[name]) name = "panel";
+  currentTab = name;
   $$("[data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   closeSheet();
   tabs[name]();
   window.scrollTo({ top: 0 });
+  // URL'e yaz ki sayfa yenilenince (F5) aynı sekmede kalsın, panele atmasın
+  if (!fromHash && location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name);
 }
 window.switchTab = switchTab;
 $$("[data-tab]").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+window.addEventListener("hashchange", () => {
+  const name = location.hash.slice(1);
+  if (name && name !== currentTab && tabs[name]) switchTab(name, { fromHash: true });
+});
 
 function closeSheet() { $("#sheetBack").classList.remove("open"); }
 $("#btnMore").onclick = () => $("#sheetBack").classList.add("open");
@@ -1776,7 +1956,9 @@ window.addEventListener("resize", () => {
     await loadMeta();
     const p = await api("/api/profil");
     ME._id = p.id;
-    renderPanel();
+    // Sayfa yenilenince (F5) URL'deki sekmeye dön, her zaman Panel'e atma
+    const hashTab = location.hash.slice(1);
+    switchTab(tabs[hashTab] ? hashTab : "panel", { fromHash: true });
   } catch (e) {
     view.innerHTML = `<div class="card"><h3>Bağlantı hatası</h3><p style="font-size:13px">${esc(e.message)}</p></div>`;
   }

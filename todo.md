@@ -19,6 +19,10 @@
 - [ ] Gümrük müşaviri paneli (çok firma görünümü)
 - [ ] Kapatma dilekçesi çıktısı (kapatma raporu setine resmî dilekçe şablonu eklenmesi)
 
+## 🟡 Sırada — kapsam genişletme (opsiyonel)
+
+- [ ] Toplu seçim + kolon genişliği, `dataTable()` bileşenini kullanmayan sayfalara da yayılabilir: Depo, Üretim, Kalite Kontrol, Muhasebe (cari/fatura/ödeme), Yönetim (çalışanlar) şu an düz `<table>` kullanıyor, sıralama/sürükle/genişlik/toplu seçim yok. İstenirse bu sayfalar da `buildKalemTable()`'a taşınabilir.
+
 ## ✅ Tamamlananlar
 
 - [x] **İhracat Fatura Sarf Tablosu raporu** (`/api/rapor/sarf`) — Excel'deki İHR.FAT. SARF sayfasının sistemleştirilmiş karşılığı, 3 sayfalık set (Görüntüle/Excel/PDF):
@@ -27,6 +31,12 @@
   - *Reçete Katsayı Matrisi*: Excel'in 13-160. kolonlarındaki katsayı bloğunun okunur hali (grup × hammadde)
   - Renk, DİİB satır kodu grubundan türetilir (001/005/009=SİYAH, 003/008/011=BEYAZ, 004/006/012=ŞEFFAF, 002/007/010=DİĞER); alkol tipi mamul kategorisinden. Canlıda 3 formatta doğrulandı (2026-08-17)
 - [x] **Canlı Sarf Tablosu** — Raporlar sayfasına gömülü, İHR.FAT. SARF'ın açık/dinamik hali: sistemdeki güncel kayıtlardan anlık hesaplanır (kayıt ekle/sil/düzenle → tablo değişir). Arama + alkol tipi + renk + ülke filtreleri, KPI özet şeridi, 24 kolon (12 kimlik + 12 hammadde sarfı), sıralama/sütun düzeni/CSV/sayfalama, filtreye göre hammadde bazlı TOPLAM satırı. Veri ucu: `/api/rapor/sarf/veri` (rapor formatlarıyla aynı hesap çekirdeğini kullanır). Doğrulama: BEYAZ+Metil → yalnız titandioksit 774 kg + metil 946 kg; BEYAZ+Etil → tamamen farklı reçete seti (2026-08-17)
+- [x] **Tüm tablolar için 4 iyileştirme** (`dataTable()` çekirdeğine eklendi — İthalat/İhracat/Evrak Arşivi/Canlı Sarf Tablosu'nun tamamında otomatik geçerli):
+  1. **Toplu işlemler**: her satırda seçim kutusu + "tümünü seç"; seçim yapılınca üstte mavi araç çubuğu (🗑️ Seçilenleri Sil, ⬇ Seçilenleri CSV İndir). İthalat/İhracat'ta kalem bazlı toplu silme, Evrak Arşivi'nde belge bazlı toplu silme — her biri backend'e tek tek DELETE atıp sonucu (N başarılı / M başarısız) bildiriyor
+  2. **Sütun sürükle-bırak artık sayfayı/tabloyu başa kaydırmıyor**: `rerenderTable()` şimdi tablo içi yatay kaydırmayı (`dt-wrap.scrollLeft`) ve sayfa dikey kaydırmasını render öncesi alıp render sonrası geri yüklüyor — gerçek sürükle-bırak olayıyla test edildi, kaydırma konumu birebir korundu
+  3. **Kolon genişliği ayarlanabilir**: her başlığın sağ kenarında tutamaç (fare + dokunmatik); genişlik hesaba kayıtlı (`localStorage`), "Varsayılana dön" ile sıfırlanabilir
+  4. **Sayfa yenileme (F5) artık her zaman Panel'e atmıyor**: `switchTab()` URL hash'ini günceller (`#ithalat`, `#muhasebe`...), yenilemede son bulunulan sekmeye dönülüyor; hash yoksa (ilk giriş) Panel varsayılan kalıyor. Canlıda gerçek F5 ile doğrulandı
+  - Evrak Arşivi tablosu bu turda düz `<table>`'dan `dataTable()` bileşenine taşındı — artık o da sıralanabilir/sürüklenebilir/toplu seçilebilir (2026-08-18)
 
 - [x] Excel analizi: DİİB-4 tüm sayfalar + DİİB klasörü belgeleri (2026-08-16)
 - [x] Local MVP: FastAPI + SQLite, fotoğraf → çıkarım → stok/taahhüt akışı
