@@ -1675,18 +1675,7 @@ function raporKart(tip, ikon, ad, aciklama) {
 
 function renderRaporlar() {
   view.innerHTML = `
-    <div class="page-head"><h2>Raporlar</h2><p>Resmî çıktılar — müşavir/YMM onayına hazır taslaklar · Görüntüle / Excel / PDF</p></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">
-      ${raporKart("kdv", "🧾", "KDV İstisna Listesi",
-        "Her ihracat kalemi için DİİB'li girdi sarfları ve KDV ödemeksizin düşülecek TL tutar (son ithalat fiyatı × ithalat kuru). Maliyeye sunulan listenin karşılığıdır.")}
-      ${raporKart("tev", "⚖️", "TEV Tablosu (EK-8)",
-        "AB/STA ülkelerine ihracatta 3. ülke menşeli girdiler için telafi edici vergi hesabı (%6,5). İhracat-ithalat eşleştirmeli taslak tablo.")}
-      ${raporKart("sarf", "⚗️", "İhracat Fatura Sarf Tablosu",
-        "Excel'deki İHR.FAT. SARF sayfasının karşılığı: her fatura kalemi için hammadde sarfları + alkol tipi/renk ayrımı (aynı renk, farklı alkol → farklı reçete) + reçete katsayı matrisi. 3 sayfalık set.")}
-      ${raporKart("kapatma", "📦", "Kapatma Dosyası Seti",
-        "Dört sayfalık set: taahhüt gerçekleşme, ithalat listesi, ihracat listesi, hammadde sarf/stok özeti — kapatma başvurusuna altlık.")}
-    </div>
-    <div class="page-head" style="margin-top:22px"><h2>⚗️ Canlı Sarf Tablosu — İHR.FAT. SARF</h2>
+    <div class="page-head"><h2>⚗️ Canlı Sarf Tablosu — İHR.FAT. SARF</h2>
       <p>Sistemdeki güncel kayıtlardan anlık hesaplanır: kayıt eklendiğinde / silindiğinde / düzenlendiğinde tablo kendiliğinden değişir</p></div>
     <div class="filterbar with-kat" id="sarfFlt">
       <input id="sf_q" placeholder="🔍 Ara: fatura, müşteri, ürün…" value="${esc(SARF_FLT.q || "")}">
@@ -1703,7 +1692,19 @@ function renderRaporlar() {
       </select>
       <button class="ghost slim" id="sf_temizle">Temizle</button>
     </div>
-    <div id="sarfTabloArea">${spinner()}</div>`;
+    <div id="sarfTabloArea">${spinner()}</div>
+
+    <div class="page-head" style="margin-top:26px"><h2>Raporlar</h2><p>Resmî çıktılar — müşavir/YMM onayına hazır taslaklar · Görüntüle / Excel / PDF</p></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">
+      ${raporKart("kdv", "🧾", "KDV İstisna Listesi",
+        "Her ihracat kalemi için DİİB'li girdi sarfları ve KDV ödemeksizin düşülecek TL tutar (son ithalat fiyatı × ithalat kuru). Maliyeye sunulan listenin karşılığıdır.")}
+      ${raporKart("tev", "⚖️", "TEV Tablosu (EK-8)",
+        "AB/STA ülkelerine ihracatta 3. ülke menşeli girdiler için telafi edici vergi hesabı (%6,5). İhracat-ithalat eşleştirmeli taslak tablo.")}
+      ${raporKart("sarf", "⚗️", "İhracat Fatura Sarf Tablosu",
+        "Excel'deki İHR.FAT. SARF sayfasının karşılığı: her fatura kalemi için hammadde sarfları + alkol tipi/renk ayrımı (aynı renk, farklı alkol → farklı reçete) + reçete katsayı matrisi. 3 sayfalık set.")}
+      ${raporKart("kapatma", "📦", "Kapatma Dosyası Seti",
+        "Dört sayfalık set: taahhüt gerçekleşme, ithalat listesi, ihracat listesi, hammadde sarf/stok özeti — kapatma başvurusuna altlık.")}
+    </div>`;
   SARF_DATA = null; // her sayfa açılışında güncel veriyi çek — tablo sistemdeki değişiklikleri anında yansıtır
   wireSarfTablo();
 }
