@@ -13,6 +13,7 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
+html, body { overflow-x: hidden; } /* sayfa asla yatay kaymaz — kayma yalnızca tablo içinde (.dt-wrap) */
 body {
   font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
@@ -58,6 +59,7 @@ main { padding: 14px 12px 24px; max-width: 780px; margin: 0 auto; }
   .side-nav button.active { background: var(--brand-2); color: #fff; }
   .side-foot { margin-top: auto; padding: 12px 10px 0; border-top: 1px solid rgba(255,255,255,.15); font-size: 12.5px; }
   .side-foot .linkbtn { background: none; border: 0; color: #9fd0f5; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 8px 0 0; }
+  .content { min-width: 0; } /* grid çocuğu min-width:auto olursa geniş tablo tüm sayfayı kaydırır */
   .content header { border-radius: 0; }
   main { max-width: none; width: 100%; padding: 22px 28px 44px; margin: 0; }
   .kpis { grid-template-columns: repeat(4, 1fr); }
@@ -279,7 +281,23 @@ button.ghost.slim { width: auto; padding: 9px 14px; margin-top: 0; font-size: 13
 /* ===== Excel benzeri veri tablosu ===== */
 .dt-tools { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
 .dt-right { display: flex; gap: 8px; align-items: center; }
-.dt-wrap { max-height: calc(100vh - 320px); overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.dt-wrap { max-height: calc(100vh - 320px); overflow: auto; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; }
+.dt-pager { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.dt-pager select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; margin-left: 4px; }
+.dt-pager .sm, .dt-right .sm { font-size: 12.5px; }
+.dt-pager button[disabled] { opacity: .4; cursor: default; }
+.tbl.xls tfoot td { position: sticky; bottom: 0; background: #f0f4f9; border-top: 2px solid var(--brand-2); padding: 8px; white-space: nowrap; font-size: 12.5px; z-index: 2; }
+.tbl.xls tfoot .foot-lbl { font-weight: 800; color: var(--brand); }
+.tbl.xls tfoot .islem-td { z-index: 3; background: #f0f4f9; }
+.kalem-ozet { grid-template-columns: repeat(2, 1fr); margin-bottom: 12px; }
+.kalem-ozet .kpi.wide { grid-column: 1 / -1; }
+.kalem-ozet .v.vsm { font-size: 15px; line-height: 1.5; }
+@media (min-width: 1024px) {
+  .kalem-ozet { grid-template-columns: repeat(4, 1fr) minmax(220px, 1.6fr); }
+  .kalem-ozet .kpi.wide { grid-column: auto; }
+}
+.mob-ozet { font-size: 13.5px; color: var(--muted); padding: 10px 14px; }
+.mob-ozet b { color: var(--ink); }
 .tbl.xls { font-size: 12.8px; }
 .tbl.xls thead th {
   position: sticky; top: 0; z-index: 2;

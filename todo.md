@@ -45,3 +45,13 @@
 - [x] Sol menü scroll düzeltmesi
 - [x] GitHub reposu + profesyonel README (github.com/RealMrNovember/diibpro)
 - [x] Kalem detayları: GTİP + gerçek kalem no (beyanname/fatura satır numarası) — DB, Excel aktarımı (484/484 dolu), API, OCR/AI şemaları, formlar, düzenleme kutusu; canlıda doğrulandı (2026-08-16)
+- [x] Raporlar 3 format: Excel + PDF indirme + tarayıcıda görüntüleme (yazdırma dahil) (2026-08-16)
+- [x] Profesyonel Evrak Arşivi: 36 geçmiş belge kategorili; kategori çipleri, tür filtresi, arama, yükleme/indirme/silme (2026-08-16)
+- [x] Uyarı motoru (belge süresi, taahhüt açığı, izin aşımı, eksi stok, açık beyanname, vadesi geçmiş fatura) + TCMB kur servisi + muhasebede döviz ayrıştırması (2026-08-16)
+- [x] Ürün ailesi ayrıştırması (Etil/Metil/İsopropil Alkollü, Laklar, Katkı, İncelticiler) + ihracat aile filtresi (2026-08-16)
+- [x] Veri tamamlama: 485 kalem / 293.840 kg — Excel ile birebir; kalem tutarları kg orantısıyla dağıtıldı (2026-08-16)
+- [x] Tam genişlik responsive düzen + deploy.sh (tek komut) + sunucuda günlük DB yedeği (cron 03:10, 30 gün) (2026-08-16)
+- [x] Admin parolası eski haline alındı (matek2026) — parolalar bir daha asla sorulmadan değiştirilmeyecek (2026-08-16)
+- [x] İthalat/İhracat sayfaları profesyonel kurgu: sayfa yatay kaymaz (kayma yalnızca tablo içinde), KPI özet şeridi (kalem/belge/KG/ülke/döviz bazlı tutar), sayfalama (25-250/Tümü, hesaba kayıtlı), filtreye göre TOPLAM satırı (sabit alt satır), mobil özet kartı, sürüm damgalı asset önbelleği — canlıda doğrulandı (2026-08-17)
+
+> Not: Frontend değişikliklerinde `frontend/index.html` içindeki `?v=YYYYMMDDx` sürüm damgası artırılmalı (CDN önbelleği).

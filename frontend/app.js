@@ -467,14 +467,15 @@ function tState(key, cols) {
     const defOrder = cols.map(c => c.id);
     const order = (saved.order || defOrder).filter(id => defOrder.includes(id));
     defOrder.forEach(id => { if (!order.includes(id)) order.push(id); });
-    TSTATE[key] = { order, hidden: saved.hidden || [], sort: saved.sort || null };
+    TSTATE[key] = { order, hidden: saved.hidden || [], sort: saved.sort || null,
+                    pageSize: saved.pageSize != null ? saved.pageSize : 50, page: 1 };
   }
   return TSTATE[key];
 }
 
 function tSave(key) {
   const s = TSTATE[key];
-  localStorage.setItem(tKey(key), JSON.stringify({ order: s.order, hidden: s.hidden, sort: s.sort }));
+  localStorage.setItem(tKey(key), JSON.stringify({ order: s.order, hidden: s.hidden, sort: s.sort, pageSize: s.pageSize }));
 }
 
 function tSortRows(rows, cols, sort) {
@@ -500,16 +501,55 @@ function dataTable(key, cols, rowsData, { renderBox }) {
       <span>${c.label}</span>${s.sort && s.sort.col === c.id ? (s.sort.dir === "desc" ? " ▼" : " ▲") : ""}
     </th>`).join("") + "<th class='islem-th'>İşlem</th>";
 
-  const body = sorted.map(r => `
+  // sayfalama
+  const ps = s.pageSize; // 0 = tümü
+  const pages = ps ? Math.max(1, Math.ceil(sorted.length / ps)) : 1;
+  if (s.page > pages) s.page = pages;
+  if (s.page < 1) s.page = 1;
+  const pageRows = ps ? sorted.slice((s.page - 1) * ps, s.page * ps) : sorted;
+
+  const body = pageRows.map(r => `
     <tr>${visible.map(c => `<td class="${c.num ? "r" : ""}">${c.render ? c.render(r) : esc(r[c.id])}</td>`).join("")}
     <td class="islem-td">${r._actions || ""}</td></tr>`).join("");
+
+  // toplam satırı — filtrelenmiş TÜM kayıtlar üzerinden (yalnızca görünen sayfa değil)
+  let footCells = "", hasSum = false;
+  visible.forEach((c, i) => {
+    if (c.sum === "kg") {
+      hasSum = true;
+      footCells += `<td class="r"><b>${fmt(sorted.reduce((a, r) => a + (+r[c.id] || 0), 0))}</b></td>`;
+    } else if (c.sum === "money") {
+      hasSum = true;
+      const byDoviz = {};
+      sorted.forEach(r => { const v = +r[c.id] || 0; if (v) byDoviz[r.doviz || "USD"] = (byDoviz[r.doviz || "USD"] || 0) + v; });
+      footCells += `<td class="r"><b>${Object.entries(byDoviz).map(([d, v]) => `${fmt(v, 2)} ${d}`).join("<br>") || "—"}</b></td>`;
+    } else {
+      footCells += i === 0 ? `<td class="foot-lbl">TOPLAM (${sorted.length} kalem)</td>` : "<td></td>";
+    }
+  });
+  const foot = hasSum ? `<tfoot><tr>${footCells}<td class="islem-td"></td></tr></tfoot>` : "";
 
   const colMenu = cols.map(c => `
     <label class="colmenu-item"><input type="checkbox" data-col="${c.id}" ${s.hidden.includes(c.id) ? "" : "checked"}> ${c.label}</label>`).join("");
 
+  const pager = `
+    <div class="dt-pager">
+      <span class="muted">${sorted.length ? `${ps ? (s.page - 1) * ps + 1 : 1}–${ps ? Math.min(s.page * ps, sorted.length) : sorted.length} / ${sorted.length} kalem` : "Kayıt yok"}</span>
+      <div class="dt-right">
+        <label class="muted sm">Sayfa boyutu
+          <select id="dt-ps-${key}">
+            ${[25, 50, 100, 250, 0].map(n => `<option value="${n}" ${ps === n ? "selected" : ""}>${n || "Tümü"}</option>`).join("")}
+          </select></label>
+        ${ps && pages > 1 ? `
+          <button class="ghost slim" id="dt-prev-${key}" ${s.page <= 1 ? "disabled" : ""}>‹ Önceki</button>
+          <span class="muted sm">${s.page} / ${pages}</span>
+          <button class="ghost slim" id="dt-next-${key}" ${s.page >= pages ? "disabled" : ""}>Sonraki ›</button>` : ""}
+      </div>
+    </div>`;
+
   const html = `
     <div class="dt-tools">
-      <span class="muted">${sorted.length} kalem · sütun başlığına tıkla: sırala · sürükle: yer değiştir</span>
+      <span class="muted">Başlığa tıkla: sırala · başlığı sürükle: yer değiştir — düzen hesabına kaydedilir</span>
       <div class="dt-right">
         <button class="ghost slim" id="dt-csv-${key}">⬇ CSV</button>
         <div class="colmenu-wrap">
@@ -520,8 +560,9 @@ function dataTable(key, cols, rowsData, { renderBox }) {
       </div>
     </div>
     <div class="scrollx dt-wrap"><table class="tbl xls">
-      <thead><tr>${head}</tr></thead><tbody>${body}</tbody>
-    </table></div>`;
+      <thead><tr>${head}</tr></thead><tbody>${body}</tbody>${foot}
+    </table></div>
+    ${pager}`;
 
   const wire = () => {
     const box = renderBox();
@@ -564,6 +605,12 @@ function dataTable(key, cols, rowsData, { renderBox }) {
     $(`#dt-reset-${key}`, box).onclick = () => {
       localStorage.removeItem(tKey(key)); delete TSTATE[key]; rerenderTable(key);
     };
+    // sayfalama
+    const psSel = $(`#dt-ps-${key}`, box);
+    if (psSel) psSel.onchange = () => { s.pageSize = +psSel.value; s.page = 1; tSave(key); rerenderTable(key); };
+    const prev = $(`#dt-prev-${key}`, box), next = $(`#dt-next-${key}`, box);
+    if (prev) prev.onclick = () => { s.page--; rerenderTable(key); };
+    if (next) next.onclick = () => { s.page++; rerenderTable(key); };
     // CSV
     $(`#dt-csv-${key}`, box).onclick = () => {
       const sep = ";";
@@ -585,11 +632,28 @@ function dataTable(key, cols, rowsData, { renderBox }) {
 const TABLE_RERENDER = {};
 function rerenderTable(key) { if (TABLE_RERENDER[key]) TABLE_RERENDER[key](); }
 
-function buildKalemTable(key, cols, box, items) {
+function buildKalemTable(key, cols, box, items, extra = "") {
   const t = dataTable(key, cols, items, { renderBox: () => box });
-  box.innerHTML = `<div class="card">${t.html}</div>`;
-  TABLE_RERENDER[key] = () => buildKalemTable(key, cols, box, items);
+  box.innerHTML = `${extra}<div class="card">${t.html}</div>`;
+  TABLE_RERENDER[key] = () => buildKalemTable(key, cols, box, items, extra);
   t.wire();
+}
+
+/* filtrelenmiş kalemlerden özet şeridi */
+function kalemOzet(kind, items) {
+  const kg = items.reduce((a, r) => a + (+r.miktar_kg || 0), 0);
+  const belgeler = new Set(items.map(r => kind === "ithalat" ? (r.beyanname_no || r.id) : (r.fatura_no || r.beyanname_no || r.id))).size;
+  const ulkeler = new Set(items.map(r => r.ulke).filter(Boolean)).size;
+  const byDoviz = {};
+  items.forEach(r => { const v = +r.tutar || 0; if (v) byDoviz[r.doviz || "USD"] = (byDoviz[r.doviz || "USD"] || 0) + v; });
+  const dovizStr = Object.entries(byDoviz).map(([d, v]) => `${fmt(v, 2)} ${d}`).join(" · ") || "—";
+  return `<div class="kpis kalem-ozet">
+    <div class="kpi brand"><div class="v">${items.length}</div><div class="l">Kalem</div></div>
+    <div class="kpi"><div class="v">${belgeler}</div><div class="l">${kind === "ithalat" ? "Beyanname" : "Fatura"}</div></div>
+    <div class="kpi ok"><div class="v">${fmt(kg)}</div><div class="l">Toplam KG</div></div>
+    <div class="kpi"><div class="v">${ulkeler}</div><div class="l">Ülke</div></div>
+    <div class="kpi wide"><div class="v vsm">${dovizStr}</div><div class="l">Toplam Tutar (filtreye göre)</div></div>
+  </div>`;
 }
 
 /* ================================================================ KAYIT LİSTELERİ */
@@ -629,6 +693,7 @@ function wireFilters(kind, reload) {
     f.bitis = $("#flt_bit").value;
     f.kaynak = $("#flt_kaynak").value;
     if ($("#flt_kategori")) f.kategori = $("#flt_kategori").value;
+    if (TSTATE[kind]) TSTATE[kind].page = 1; // filtre değişince ilk sayfaya dön
     reload();
   };
   let t;
@@ -678,9 +743,9 @@ const ITH_COLS = [
   { id: "gtip", label: "GTİP" },
   { id: "kalem_no", label: "Kalem No", num: true },
   { id: "gumruk", label: "Gümrük", render: r => esc((r.gumruk || "").replace(" GÜMRÜK MÜDÜRLÜĞÜ", "")) },
-  { id: "miktar_kg", label: "KG", num: true, render: r => `<b>${fmt(r.miktar_kg)}</b>`, csv: r => r.miktar_kg },
+  { id: "miktar_kg", label: "KG", num: true, sum: "kg", render: r => `<b>${fmt(r.miktar_kg)}</b>`, csv: r => r.miktar_kg },
   { id: "birim_fiyat", label: "Birim Fiyat", num: true, render: r => fmt(r.birim_fiyat, 2), csv: r => r.birim_fiyat },
-  { id: "tutar", label: "Tutar", num: true, render: r => `${fmt(r.tutar, 2)} ${r.doviz}`, csv: r => r.tutar },
+  { id: "tutar", label: "Tutar", num: true, sum: "money", render: r => `${fmt(r.tutar, 2)} ${r.doviz}`, csv: r => r.tutar },
 ];
 
 async function loadIthalatList() {
@@ -697,12 +762,13 @@ async function loadIthalatList() {
     });
     window._kalemRows = window._kalemRows || {};
     window._kalemRows.ithalat = items;
-    buildKalemTable("ithalat", ITH_COLS, box, items);
+    buildKalemTable("ithalat", ITH_COLS, box, items, kalemOzet("ithalat", items));
     return;
   }
   {
     const items = await api("/api/ithalat" + qs("ithalat"));
-    box.innerHTML = items.map(it => `
+    const mKg = items.reduce((a, it) => a + it.kalemler.reduce((b, k) => b + (+k.miktar_kg || 0), 0), 0);
+    box.innerHTML = `<div class="card mob-ozet"><b>${items.length}</b> beyanname · <b>${fmt(mKg)}</b> kg</div>` + items.map(it => `
       <details class="rec">
         <summary><span>📥 ${esc(it.beyanname_no || "İthalat #" + it.id)} ${kaynakBadge(it.kaynak)}</span><small>${it.tarih || ""}</small></summary>
         <div class="body">
@@ -711,7 +777,7 @@ async function loadIthalatList() {
           ${it.image_paths.map(p => `<a href="/uploads/${p}" target="_blank" class="filelink">📎 ${p}</a>`).join("")}
           <button class="danger-link mt8" onclick="delIthalat(${it.id})">Kaydı Sil</button>
         </div>
-      </details>`).join("") || "<p class='muted'>Kayıt bulunamadı</p>";
+      </details>`).join("") + (items.length ? "" : "<p class='muted'>Kayıt bulunamadı</p>");
   }
 }
 
@@ -738,9 +804,9 @@ const IHR_COLS = [
   { id: "gtip", label: "GTİP" },
   { id: "kalem_no", label: "Kalem No", num: true },
   { id: "gumruk", label: "Gümrük", render: r => esc((r.gumruk || "").replace(" GÜMRÜK MÜDÜRLÜĞÜ", "")) },
-  { id: "miktar_kg", label: "KG", num: true, render: r => `<b>${fmt(r.miktar_kg)}</b>`, csv: r => r.miktar_kg },
+  { id: "miktar_kg", label: "KG", num: true, sum: "kg", render: r => `<b>${fmt(r.miktar_kg)}</b>`, csv: r => r.miktar_kg },
   { id: "birim_fiyat", label: "Birim Fiyat", num: true, render: r => fmt(r.birim_fiyat, 2), csv: r => r.birim_fiyat },
-  { id: "tutar", label: "Tutar", num: true, render: r => `${fmt(r.tutar, 2)} ${r.doviz}`, csv: r => r.tutar },
+  { id: "tutar", label: "Tutar", num: true, sum: "money", render: r => `${fmt(r.tutar, 2)} ${r.doviz}`, csv: r => r.tutar },
   { id: "kapanis_tarihi", label: "Kapanış", render: r => esc(r.kapanis_tarihi || "AÇIK") },
 ];
 
@@ -758,12 +824,13 @@ async function loadIhracatList() {
     });
     window._kalemRows = window._kalemRows || {};
     window._kalemRows.ihracat = items;
-    buildKalemTable("ihracat", IHR_COLS, box, items);
+    buildKalemTable("ihracat", IHR_COLS, box, items, kalemOzet("ihracat", items));
     return;
   }
   {
     const items = await api("/api/ihracat" + qs("ihracat"));
-    box.innerHTML = items.map(it => `
+    const mKg = items.reduce((a, it) => a + it.kalemler.reduce((b, k) => b + (+k.miktar_kg || 0), 0), 0);
+    box.innerHTML = `<div class="card mob-ozet"><b>${items.length}</b> fatura · <b>${fmt(mKg)}</b> kg</div>` + items.map(it => `
       <details class="rec">
         <summary><span>📤 ${esc(it.fatura_no || "İhracat #" + it.id)} ${kaynakBadge(it.kaynak)}</span><small>${it.tarih || ""} · ${esc(it.musteri)}</small></summary>
         <div class="body">
@@ -773,7 +840,7 @@ async function loadIhracatList() {
           ${it.image_paths.map(p => `<a href="/uploads/${p}" target="_blank" class="filelink">📎 ${p}</a>`).join("")}
           <button class="danger-link mt8" onclick="delIhracat(${it.id})">Kaydı Sil</button>
         </div>
-      </details>`).join("") || "<p class='muted'>Kayıt bulunamadı</p>";
+      </details>`).join("") + (items.length ? "" : "<p class='muted'>Kayıt bulunamadı</p>");
   }
 }
 
