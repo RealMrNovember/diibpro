@@ -5,7 +5,6 @@
 
 ## 🟡 Sırada — kullanıcı teyidi / kararı bekleyenler
 
-- [ ] Hammadde DİİB satır kodları teyidi: PİGMENT=.001 belgeden teyitli; .002-.009 önceki belgenin resmî sırasına göre atandı — **belgeden kontrol edilip yanlışsa Tanımlar'dan düzeltilmeli**
 - [ ] Admin parolası: **kullanıcı kendisi değiştirecek** (Profil → Parola Değiştir). Parolalar asla sorulmadan değiştirilmez.
 - [ ] Cloudflare SSL modu Full'e alınırsa origin https yönlendirmesini geri ekle
 - [ ] İhracat kalem tutarları not: kaynak Excel'de kalem fiyatı olmadığından fatura toplamı kg orantısıyla dağıtıldı (kayıt notlarında yazıyor) — gerçek kalem fiyatları girilirse düzenleme ekranından güncellenebilir
@@ -54,4 +53,7 @@
 - [x] Admin parolası eski haline alındı (matek2026) — parolalar bir daha asla sorulmadan değiştirilmeyecek (2026-08-16)
 - [x] İthalat/İhracat sayfaları profesyonel kurgu: sayfa yatay kaymaz (kayma yalnızca tablo içinde), KPI özet şeridi (kalem/belge/KG/ülke/döviz bazlı tutar), sayfalama (25-250/Tümü, hesaba kayıtlı), filtreye göre TOPLAM satırı (sabit alt satır), mobil özet kartı, sürüm damgalı asset önbelleği — canlıda doğrulandı (2026-08-17)
 
+- [x] Hammadde DİİB satır kodları belgeden teyit edildi: kaynak = DİİB-4 Excel **"İTH. ve SARF MİKTARLARI" (Ithal Esya Listesi)** sayfası. Sıralama (.001 PİGMENT → .009 POLİÜRETAN REÇİNE) sistemdekiyle birebir aynı çıktı; ek olarak her maddenin **DİİB ithal izin miktarı** (toplam 634.220 kg / 10.017.273 USD) hammadde kartlarına işlendi — izin aşımı uyarıları artık gerçek limitlerle çalışıyor. Çapraz doğrulama: sistemdeki 85.790 kg ithalat, belgedeki gerçekleşen miktarlarla birebir (2026-08-17)
+
 > Not: Frontend değişikliklerinde `frontend/index.html` içindeki `?v=YYYYMMDDx` sürüm damgası artırılmalı (CDN önbelleği).
+> Not: Belge listesi kaynağı — DİİB klasörüne eklenen "DİİB TEŞVİK KULLANIM HESAPLAMA LİSTESİ" klasörü 2021-2022 belgelerinin (21.2.06327 / 22.2.06906) çalışma dosyalarını içerir; aktif belgenin (2024/D1-03798) ithal eşya listesi ana Excel'in "İTH. ve SARF MİKTARLARI" sayfasındadır.

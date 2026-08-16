@@ -318,21 +318,24 @@ def canonical_hammadde(raw: str):
     return raw.strip()
 
 
+# Kaynak: DİİB-4 Excel "İTH. ve SARF MİKTARLARI" (Ithal Esya Listesi) sayfası —
+# satır sırası, GTİP ve DİİB kapsamında ithal izni miktarları belge listesinden.
+# (ad, gtip, yerli, satir_sira, izin_kg)  — satir_sira → 24.2.03798.NNN
 HAMMADDE_CATALOG = [
-    ("PİGMENT",             "32.04.17.00.00.11", 0),
-    ("TİTANDİOKSİT",        "32.06.11.00.00.00", 0),
-    ("KARBON KARASI",       "28.03.00.00.90.11", 0),
-    ("NİTROSELÜLOZ REÇİNE", "39.12.20.19.00.11", 0),
-    ("POLİÜRETAN REÇİNE",   "39.09.50.90.00.00", 0),
-    ("POLİAMİD REÇİNE",     "39.08.90.00.00.00", 0),
-    ("MALEİK REÇİNE",       "38.06.90.00.90.11", 0),
-    ("ETİL ASETAT",         "29.15.31.00.00.00", 0),
-    ("POLİETİLEN VAKS",     "34.04.90.00.19.00", 0),
-    ("ETİL ALKOL %99",      "22.07.20.00.90.13", 1),
-    ("ETİL ALKOL %96",      "22.07.20.00.90.13", 1),
-    ("İSOPROPİL ALKOL",     "29.05.12.00.00.12", 1),
-    ("METİL ALKOL",         "29.05.11.00.00.00", 1),
-    ("BUTANOL",             "29.05.13.00.00.00", 1),
+    ("PİGMENT",             "32.04.17.00.00.11", 0, 1,  90000),
+    ("TİTANDİOKSİT",        "32.06.11.00.00.00", 0, 2, 321000),
+    ("POLİAMİD REÇİNE",     "39.08.90.00.00.00", 0, 3,  61475),
+    ("KARBON KARASI",       "28.03.00.00.90.11", 0, 4,  20375),
+    ("MALEİK REÇİNE",       "38.06.90.00.90.11", 0, 5,  33770),
+    ("NİTROSELÜLOZ REÇİNE", "39.12.20.19.00.11", 0, 6,  95100),
+    ("POLİETİLEN VAKS",     "34.04.90.00.19.00", 0, 7,    500),
+    ("ETİL ASETAT",         "29.15.31.00.00.00", 0, 8,   1000),
+    ("POLİÜRETAN REÇİNE",   "39.09.50.90.00.00", 0, 9,  11000),
+    ("ETİL ALKOL %99",      "22.07.20.00.90.13", 1, 0,      0),
+    ("ETİL ALKOL %96",      "22.07.20.00.90.13", 1, 0,      0),
+    ("İSOPROPİL ALKOL",     "29.05.12.00.00.12", 1, 0,      0),
+    ("METİL ALKOL",         "29.05.11.00.00.00", 1, 0,      0),
+    ("BUTANOL",             "29.05.13.00.00.00", 1, 0,      0),
 ]
 
 
@@ -364,6 +367,13 @@ def _migrate(conn):
         conn.execute("ALTER TABLE mamul ADD COLUMN kategori TEXT DEFAULT ''")
     for m in conn.execute("SELECT id, ad FROM mamul WHERE kategori='' OR kategori IS NULL").fetchall():
         conn.execute("UPDATE mamul SET kategori=? WHERE id=?", (mamul_kategori(m["ad"]), m["id"]))
+    # hammadde satır kodu + DİİB ithal izin miktarları (belge Ithal Esya Listesi'nden)
+    for ad, gtip, yerli, sira, izin_kg in HAMMADDE_CATALOG:
+        if not sira:
+            continue
+        conn.execute(
+            "UPDATE hammadde SET satir_kodu=?, izin_miktari_kg=? WHERE ad=? AND (izin_miktari_kg=0 OR izin_miktari_kg IS NULL)",
+            (f"24.2.03798.{sira:03d}", izin_kg, ad))
 
 
 def mamul_kategori(ad: str) -> str:
@@ -459,8 +469,10 @@ def _seed(conn):
         (firma_id, b["belge_no"], b["belge_tarihi"], b["sure_sonu"], b["ongorulen_ihracat_usd"], b["ongorulen_ithalat_usd"]))
     belge_id = cur.lastrowid
 
-    for ad, gtip, yerli in HAMMADDE_CATALOG:
-        conn.execute("INSERT INTO hammadde (firma_id, ad, gtip, yerli) VALUES (?,?,?,?)", (firma_id, ad, gtip, yerli))
+    for ad, gtip, yerli, sira, izin_kg in HAMMADDE_CATALOG:
+        satir_kodu = f"24.2.03798.{sira:03d}" if sira else ""
+        conn.execute("INSERT INTO hammadde (firma_id, ad, gtip, yerli, satir_kodu, izin_miktari_kg) VALUES (?,?,?,?,?,?)",
+                     (firma_id, ad, gtip, yerli, satir_kodu, izin_kg))
 
     for m in seed["mamuller"]:
         grup = m["satir_kodu"].split(".")[-1]
