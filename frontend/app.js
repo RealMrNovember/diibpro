@@ -659,7 +659,7 @@ function kalemOzet(kind, items) {
 /* ================================================================ KAYIT LİSTELERİ */
 const FILTERS = { ithalat: {}, ihracat: {} };
 
-const AILELER = ["Etil Alkollü", "Metil Alkollü (Istampa)", "İsopropil Alkollü",
+const AILELER = ["Etil Alkollü", "Metil Alkollü (İstampa)", "İsopropil Alkollü",
                  "Laklar", "Katkı Maddeleri", "İncelticiler"];
 
 function filterBar(kind) {
@@ -1073,11 +1073,24 @@ window.updUser = async (id, field, v) => {
   try { await jpost("/api/kullanici/" + id, { [field]: v }, "PUT"); toast("Güncellendi"); renderYonetim(); }
   catch (e) { toast("Hata: " + e.message, 4000); }
 };
-window.resetParola = async (id, ad) => {
-  const p = prompt(`${ad} için yeni parola (en az 6 karakter):`);
-  if (!p) return;
-  try { await jpost("/api/kullanici/" + id, { parola: p }, "PUT"); toast("Parola güncellendi"); }
-  catch (e) { toast("Hata: " + e.message, 4000); }
+window.resetParola = (id, ad) => {
+  openModal(`
+    <h3>Parola Sıfırla — ${esc(ad)}</h3>
+    <div class="field"><label>Yeni Parola (en az 6 karakter)</label><input id="rp_pw" type="text" autocomplete="off"></div>
+    <p class="muted">Kişiye yeni parolayı ayrıca bildirmeniz gerekir; sistem otomatik göndermez.</p>
+    <div class="modal-btns">
+      <button class="ghost slim" onclick="closeModal()">Vazgeç</button>
+      <button class="primary slim" onclick="saveResetParola(${id})">Parolayı Değiştir</button>
+    </div>`);
+  setTimeout(() => $("#rp_pw")?.focus(), 50);
+};
+window.saveResetParola = async id => {
+  const p = $("#rp_pw").value;
+  if (!p || p.length < 6) { toast("Parola en az 6 karakter olmalı", 3000); return; }
+  try {
+    await jpost("/api/kullanici/" + id, { parola: p }, "PUT");
+    closeModal(); toast("Parola güncellendi");
+  } catch (e) { toast("Hata: " + e.message, 4000); }
 };
 window.createUser = async () => {
   try {
@@ -1380,7 +1393,7 @@ async function renderMuhasebe() {
       <td class="r">${fmt(f.tutar, 2)} ${f.doviz}</td>
       <td class="r">${fmt(f.kalan, 2)}</td>
       <td>${durumBadge(f.durum)}</td>
-      <td>${f.kalan > 0 ? `<button class="linkbtn2" onclick="odemeAl(${f.id}, ${f.kalan}, '${f.tip}')">${f.tip === "satis" ? "Tahsil Et" : "Öde"}</button>` : ""}
+      <td>${f.kalan > 0 ? `<button class="linkbtn2" onclick="odemeAl(${f.id}, ${f.kalan}, '${f.tip}', '${f.doviz}')">${f.tip === "satis" ? "Tahsil Et" : "Öde"}</button>` : ""}
           ${f.kaynak === "manuel" ? `<button class="danger-link" onclick="delFatura(${f.id})">Sil</button>` : ""}</td>
     </tr>`).join("");
 
@@ -1448,12 +1461,27 @@ async function renderMuhasebe() {
     </div>`;
 }
 
-window.odemeAl = async (faturaId, kalan, tip) => {
-  const t = prompt(`${tip === "satis" ? "Tahsilat" : "Ödeme"} tutarı (kalan: ${kalan}):`, kalan);
-  if (!t) return;
+window.odemeAl = (faturaId, kalan, tip, doviz) => {
+  const baslik = tip === "satis" ? "Tahsilat" : "Ödeme";
+  openModal(`
+    <h3>${baslik} — Fatura #${faturaId}</h3>
+    <div class="grid2">
+      <div class="field"><label>Tutar (kalan: ${fmt(kalan, 2)} ${doviz})</label>
+        <input id="od_tutar" type="number" step="any" value="${kalan}"></div>
+      <div class="field"><label>Tarih</label><input id="od_tarih" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="ghost slim" onclick="closeModal()">Vazgeç</button>
+      <button class="primary slim" onclick="saveOdemeAl(${faturaId}, '${tip}')">${baslik} Kaydet</button>
+    </div>`);
+  setTimeout(() => $("#od_tutar")?.focus(), 50);
+};
+window.saveOdemeAl = async (faturaId, tip) => {
+  const t = +$("#od_tutar").value;
+  if (!t || t <= 0) { toast("Geçerli bir tutar girin", 3000); return; }
   try {
-    await jpost("/api/odeme", { yon: tip === "satis" ? "tahsilat" : "odeme", fatura_id: faturaId, tutar: +t });
-    toast("✅ Kaydedildi"); renderMuhasebe();
+    await jpost("/api/odeme", { yon: tip === "satis" ? "tahsilat" : "odeme", fatura_id: faturaId, tutar: t, tarih: $("#od_tarih").value });
+    closeModal(); toast("✅ Kaydedildi"); renderMuhasebe();
   } catch (e) { toast("Hata: " + e.message, 4000); }
 };
 window.createFatura = async () => {

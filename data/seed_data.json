@@ -12,105 +12,105 @@
     {
       "satir_kodu": "24.1.03798.001",
       "gtip": "32.15.11.00.00.00",
-      "ad": "MATBAA MUREKKEBI ( ISOPROPIL ALKOL BAZLi SIYAH)",
+      "ad": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI SİYAH)",
       "taahhut_kg": 10000.0,
       "birim_fiyat_usd": 5.1
     },
     {
       "satir_kodu": "24.1.03798.002",
       "gtip": "32.15.19.00.00.00",
-      "ad": "MATBAA MUREKKEBI (ISOPROPIL ALKOL BAZLi DIGER)",
+      "ad": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI DİĞER)",
       "taahhut_kg": 60000.0,
       "birim_fiyat_usd": 5.55
     },
     {
       "satir_kodu": "24.1.03798.003",
       "gtip": "32.15.19.00.00.00",
-      "ad": "MATBAA MUREKKEBI (ISOPROPIL ALKOL BAZLi BEYAZ)",
+      "ad": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI BEYAZ)",
       "taahhut_kg": 20000.0,
       "birim_fiyat_usd": 3.64
     },
     {
       "satir_kodu": "24.1.03798.004",
       "gtip": "32.15.19.00.00.00",
-      "ad": "MATBAA MUREKKEBI ( ISOPROPIL ALKOL BAZLi SEFFAF)",
+      "ad": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI ŞEFFAF)",
       "taahhut_kg": 3000.0,
       "birim_fiyat_usd": 5.25
     },
     {
       "satir_kodu": "24.1.03798.005",
       "gtip": "32.15.11.00.00.00",
-      "ad": "MATBAA MUREKKEBI ( ETIL ALKOL BAZLi SIYAH)",
+      "ad": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI SİYAH)",
       "taahhut_kg": 80000.0,
       "birim_fiyat_usd": 3.65
     },
     {
       "satir_kodu": "24.1.03798.006",
       "gtip": "32.15.19.00.00.00",
-      "ad": "MATBAA MUREKKEBI (ETIL ALKOL BAZLi SEFFAF)",
+      "ad": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI ŞEFFAF)",
       "taahhut_kg": 20000.0,
       "birim_fiyat_usd": 7.15
     },
     {
       "satir_kodu": "24.1.03798.007",
       "gtip": "32.15.19.00.00.00",
-      "ad": "MATBAA MUREKKEBI (ETIL ALKOL BAZLi DIGER..)",
+      "ad": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI DİĞER)",
       "taahhut_kg": 250000.0,
       "birim_fiyat_usd": 5.25
     },
     {
       "satir_kodu": "24.1.03798.008",
       "gtip": "32.15.19.00.00.00",
-      "ad": "MATBAA MUREKKEBI ( ETIL ALKOL BAZLi BEYAZ)",
+      "ad": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI BEYAZ)",
       "taahhut_kg": 612500.0,
       "birim_fiyat_usd": 5.25
     },
     {
       "satir_kodu": "24.1.03798.009",
       "gtip": "32.15.90.70.00.11",
-      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( SIYAH )",
+      "ad": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (SİYAH)",
       "taahhut_kg": 7500.0,
       "birim_fiyat_usd": 2.25
     },
     {
       "satir_kodu": "24.1.03798.010",
       "gtip": "32.15.90.70.00.11",
-      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( DIGER )",
+      "ad": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (DİĞER)",
       "taahhut_kg": 50000.0,
       "birim_fiyat_usd": 2.36
     },
     {
       "satir_kodu": "24.1.03798.011",
       "gtip": "32.15.90.70.00.11",
-      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( BEYAZ )",
+      "ad": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (BEYAZ)",
       "taahhut_kg": 15000.0,
       "birim_fiyat_usd": 2.25
     },
     {
       "satir_kodu": "24.1.03798.012",
       "gtip": "32.15.90.70.00.11",
-      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( SEFFAF )",
+      "ad": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (ŞEFFAF)",
       "taahhut_kg": 20000.0,
       "birim_fiyat_usd": 2.15
     },
     {
       "satir_kodu": "24.1.03798.013",
       "gtip": "32.08.90.91.00.11",
-      "ad": "DIGER LAKLAR ( BASKi ALTi LAK, PRIMER LAK, BASKi USTU OVER LAK, TERMOKOLON LAK, MAT LAK, VB.)",
+      "ad": "DİĞER LAKLAR (BASKI ALTI LAK, PRİMER LAK, BASKI ÜSTÜ OVER LAK, TERMOKOLON LAK, MAT LAK, VB.)",
       "taahhut_kg": 15000.0,
       "birim_fiyat_usd": 6.4
     },
     {
       "satir_kodu": "24.1.03798.014",
       "gtip": "32.08.90.99.00.11",
-      "ad": "BOYA VE MUREKKEP KATKi MADDELERI ( KAYDiRiCi, MATLASTiRiCi, ADHEZYON KATKiSi, HiZLANDiRiCi, GECIKTIRICI, VB)",
+      "ad": "BOYA VE MÜREKKEP KATKI MADDELERİ (KAYDIRICI, MATLAŞTIRICI, ADHEZYON KATKISI, HIZLANDIRICI, GECİKTİRİCİ, VB)",
       "taahhut_kg": 10000.0,
       "birim_fiyat_usd": 5.85
     },
     {
       "satir_kodu": "24.1.03798.015",
       "gtip": "38.14.00.90.00.19",
-      "ad": "MUREKKEP INCELTICI ( MiX THiNNER)",
+      "ad": "MÜREKKEP İNCELTİCİ (MİX THİNNER)",
       "taahhut_kg": 10000.0,
       "birim_fiyat_usd": 5.25
     }
@@ -122,7 +122,7 @@
         "katsayi": 0.25
       },
       {
-        "hammadde": "İSOPORPİL ALKOL",
+        "hammadde": "İSOPROPİL ALKOL",
         "katsayi": 0.55
       },
       {
@@ -140,7 +140,7 @@
         "katsayi": 0.25
       },
       {
-        "hammadde": "İSOPORPİL ALKOL",
+        "hammadde": "İSOPROPİL ALKOL",
         "katsayi": 0.55
       },
       {
@@ -440,7 +440,7 @@
     ],
     "011": [
       {
-        "hammadde": "TiTAN DiOKSiT (beyaz)",
+        "hammadde": "TİTANDİOKSİT (beyaz)",
         "katsayi": 0.45
       },
       {
@@ -484,7 +484,7 @@
         "katsayi": 0.05
       },
       {
-        "hammadde": "POLiAMiD RECINE",
+        "hammadde": "POLİAMİD REÇİNE",
         "katsayi": 0.2
       },
       {
@@ -492,7 +492,7 @@
         "katsayi": 0.03
       },
       {
-        "hammadde": "NiTRO SELULOZ RECINE",
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
         "katsayi": 0.12
       },
       {

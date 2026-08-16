@@ -339,6 +339,27 @@ HAMMADDE_CATALOG = [
 ]
 
 
+# Excel'den ilk aktarımda mamul adları Türkçe karaktersiz/bozuk geldi (BAZLi, DIGER, SEFFAF, iSTAMPA vb.).
+# Doğru yazım: "AKKİM DİİB FATURADA KULLANILACAK ÜRÜN TANIMLARI.docx" (resmî fatura açıklaması) esas alınmıştır.
+MAMUL_AD_DUZELTME = {
+    "001": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI SİYAH)",
+    "002": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI DİĞER)",
+    "003": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI BEYAZ)",
+    "004": "MATBAA MÜREKKEBİ (İSOPROPİL ALKOL BAZLI ŞEFFAF)",
+    "005": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI SİYAH)",
+    "006": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI ŞEFFAF)",
+    "007": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI DİĞER)",
+    "008": "MATBAA MÜREKKEBİ (ETİL ALKOL BAZLI BEYAZ)",
+    "009": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (SİYAH)",
+    "010": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (DİĞER)",
+    "011": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (BEYAZ)",
+    "012": "METİL ALKOL BAZLI İSTAMPA MÜREKKEBİ (ŞEFFAF)",
+    "013": "DİĞER LAKLAR (BASKI ALTI LAK, PRİMER LAK, BASKI ÜSTÜ OVER LAK, TERMOKOLON LAK, MAT LAK, VB.)",
+    "014": "BOYA VE MÜREKKEP KATKI MADDELERİ (KAYDIRICI, MATLAŞTIRICI, ADHEZYON KATKISI, HIZLANDIRICI, GECİKTİRİCİ, VB)",
+    "015": "MÜREKKEP İNCELTİCİ (MİX THİNNER)",
+}
+
+
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -367,6 +388,13 @@ def _migrate(conn):
         conn.execute("ALTER TABLE mamul ADD COLUMN kategori TEXT DEFAULT ''")
     for m in conn.execute("SELECT id, ad FROM mamul WHERE kategori='' OR kategori IS NULL").fetchall():
         conn.execute("UPDATE mamul SET kategori=? WHERE id=?", (mamul_kategori(m["ad"]), m["id"]))
+    conn.execute("UPDATE mamul SET kategori='Metil Alkollü (İstampa)' WHERE kategori='Metil Alkollü (Istampa)'")
+    # mamul adları — ilk aktarımda Excel'den Türkçe karaktersiz/bozuk geldi (BAZLi, DIGER, SEFFAF vb.);
+    # resmî "faturada kullanılacak ürün tanımları" belgesindeki doğru yazıma göre düzelt.
+    for grup, dogru_ad in MAMUL_AD_DUZELTME.items():
+        conn.execute(
+            "UPDATE mamul SET ad=? WHERE grup=? AND ad != ?",
+            (dogru_ad, grup, dogru_ad))
     # hammadde satır kodu + DİİB ithal izin miktarları (belge Ithal Esya Listesi'nden)
     for ad, gtip, yerli, sira, izin_kg in HAMMADDE_CATALOG:
         if not sira:
@@ -380,7 +408,7 @@ def mamul_kategori(ad: str) -> str:
     """Mamul adından ürün ailesi türet."""
     s = ad.upper().replace("İ", "I").replace("i", "I")
     if "METIL" in s or "ISTAMPA" in s or "iSTAMPA" in ad.upper():
-        return "Metil Alkollü (Istampa)"
+        return "Metil Alkollü (İstampa)"
     if "ISOPROPIL" in s:
         return "İsopropil Alkollü"
     if "ETIL" in s:
