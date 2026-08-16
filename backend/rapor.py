@@ -173,6 +173,142 @@ def build_tev(user):
     }
 
 
+# Mamul grubu → renk (DİİB satır kodu yapısından; Excel İHR.FAT. SARF sayfasındaki ayrımın karşılığı)
+GRUP_RENK = {
+    "001": "SİYAH", "002": "DİĞER (RENKLİ)", "003": "BEYAZ", "004": "ŞEFFAF",
+    "005": "SİYAH", "006": "ŞEFFAF", "007": "DİĞER (RENKLİ)", "008": "BEYAZ",
+    "009": "SİYAH", "010": "DİĞER (RENKLİ)", "011": "BEYAZ", "012": "ŞEFFAF",
+    "013": "—", "014": "—", "015": "—",
+}
+
+
+def build_sarf(user):
+    """İhracat Fatura Sarf Tablosu — Excel'deki 'İHR.FAT. SARF' sayfasının sistemleştirilmiş hali.
+
+    Aynı renk farklı alkol tipiyle üretilebildiği için (örn. BEYAZ: etil bazlı 008,
+    metil bazlı 011, isopropil bazlı 003) her kalem alkol tipi + renk ile ayrıştırılır;
+    sarf, kalemin kendi grubunun reçete katsayılarıyla hesaplanır.
+    """
+    conn, belge, firma = _ctx(user)
+    bid = belge["id"]
+    recete = _recete_map(conn, bid)
+
+    # Hammadde sırası: DİİB'li olanlar satır kodu sırasıyla, sonra yerliler — Excel'deki dizilime yakın
+    ham = [dict(r) for r in conn.execute(
+        """SELECT id, ad, yerli FROM hammadde WHERE firma_id=?
+           ORDER BY yerli, CASE WHEN satir_kodu='' THEN ad ELSE satir_kodu END""", (user["firma_id"],))]
+    kalemler = conn.execute(
+        """SELECT i.fatura_no, i.tarih, i.musteri, i.ulke, i.doviz,
+                  k.kalem_no, COALESCE(NULLIF(k.gtip,''), m.gtip) gtip, k.urun_adi,
+                  k.miktar_kg, k.mamul_id, m.ad mamul_ad, m.satir_kodu, m.grup, m.kategori
+           FROM ihracat_kalem k JOIN ihracat i ON i.id=k.ihracat_id JOIN mamul m ON m.id=k.mamul_id
+           WHERE i.belge_id=? ORDER BY i.tarih, i.id, k.kalem_no""", (bid,)).fetchall()
+
+    # Toplam sarfı 0 olan hammadde kolonlarını gösterme (Excel'de de boş kalırlar)
+    ham_toplam = {h["id"]: 0.0 for h in ham}
+    for r in kalemler:
+        for hid, kats in recete.get(r["mamul_id"], {}).items():
+            if hid in ham_toplam:
+                ham_toplam[hid] += r["miktar_kg"] * kats
+    ham = [h for h in ham if ham_toplam[h["id"]] > 0.005]
+
+    # ---- Sayfa 1: fatura kalemi bazında sarf dökümü (Excel'in birebir karşılığı) ----
+    s1, sira, onceki_fatura, toplam_kg = [], 0, None, 0.0
+    for r in kalemler:
+        if r["fatura_no"] != onceki_fatura:
+            sira += 1
+            onceki_fatura = r["fatura_no"]
+        sarflar = [round(r["miktar_kg"] * recete.get(r["mamul_id"], {}).get(h["id"], 0), 2) or 0
+                   for h in ham]
+        toplam_kg += r["miktar_kg"]
+        s1.append([sira, r["fatura_no"], r["tarih"], r["musteri"], r["ulke"], r["gtip"],
+                   r["satir_kodu"], r["kalem_no"], r["urun_adi"] or r["mamul_ad"],
+                   r["kategori"], GRUP_RENK.get(r["grup"], "—"), r["miktar_kg"]] + sarflar)
+    s1.append(["", "TOPLAM", "", "", "", "", "", "", "", "", "", round(toplam_kg, 2)]
+              + [round(ham_toplam[h["id"]], 2) for h in ham])
+    n = len(ham)
+    sayfa1 = {
+        "ad": "Fatura Sarf Dökümü",
+        "basliklar": ["Sıra", "Fatura No", "Tarih", "Müşteri", "Ülke", "GTİP", "DİİB Satır Kodu",
+                      "Kalem No", "Ürün Adı", "Alkol Tipi", "Renk", "İhraç kg"]
+                    + [f"{h['ad']}{' (yerli)' if h['yerli'] else ''} sarf kg" for h in ham],
+        "genislikler": [6, 18, 11, 22, 13, 17, 16, 8, 26, 17, 14, 10] + [13] * n,
+        "num_cols": set(range(12, 13 + n)) | {8},
+        "satirlar": s1,
+        "not": "Excel'deki İHR.FAT. SARF sayfasının karşılığıdır: her ihracat fatura kalemi için sarf, "
+               "kalemin kendi mamul grubunun (DİİB satır kodu) reçete katsayılarıyla hesaplanmıştır. "
+               "Aynı renk farklı alkol tipiyle üretilebilir (örn. BEYAZ → etil 008/018, metil 011, "
+               "isopropil 003) — Alkol Tipi ve Renk kolonları bu ayrımı gösterir.",
+    }
+
+    # ---- Sayfa 2: mamul grubu bazında özet — alkol tipi ara toplamlarıyla ----
+    grup_ozet = {}
+    for r in kalemler:
+        g = grup_ozet.setdefault(r["grup"], {
+            "satir_kodu": r["satir_kodu"], "ad": r["mamul_ad"], "kategori": r["kategori"],
+            "kalem": 0, "kg": 0.0, "sarf": {h["id"]: 0.0 for h in ham}})
+        g["kalem"] += 1
+        g["kg"] += r["miktar_kg"]
+        for h in ham:
+            g["sarf"][h["id"]] += r["miktar_kg"] * recete.get(r["mamul_id"], {}).get(h["id"], 0)
+
+    s2 = []
+    kat_sira = ["Etil Alkollü", "İsopropil Alkollü", "Metil Alkollü (İstampa)",
+                "Laklar", "Katkı Maddeleri", "İncelticiler", "Diğer"]
+    for kat in kat_sira:
+        gruplar = sorted((g for g in grup_ozet.values() if g["kategori"] == kat),
+                         key=lambda g: g["satir_kodu"])
+        if not gruplar:
+            continue
+        kat_kg, kat_sarf = 0.0, {h["id"]: 0.0 for h in ham}
+        for g in gruplar:
+            renk = GRUP_RENK.get(g["satir_kodu"].split(".")[-1][-3:], "—")
+            s2.append([g["satir_kodu"], g["ad"], kat, renk, g["kalem"], round(g["kg"], 2)]
+                      + [round(g["sarf"][h["id"]], 2) or 0 for h in ham])
+            kat_kg += g["kg"]
+            for h in ham:
+                kat_sarf[h["id"]] += g["sarf"][h["id"]]
+        s2.append(["", f"{kat.upper()} ARA TOPLAM", "", "", "", round(kat_kg, 2)]
+                  + [round(kat_sarf[h["id"]], 2) or 0 for h in ham])
+    s2.append(["", "GENEL TOPLAM", "", "", "", round(toplam_kg, 2)]
+              + [round(ham_toplam[h["id"]], 2) for h in ham])
+    sayfa2 = {
+        "ad": "Alkol Tipi Özeti",
+        "basliklar": ["DİİB Satır Kodu", "Mamul", "Alkol Tipi", "Renk", "Kalem", "İhraç kg"]
+                    + [f"{h['ad']}{' (yerli)' if h['yerli'] else ''} kg" for h in ham],
+        "genislikler": [16, 34, 17, 14, 7, 11] + [13] * n,
+        "num_cols": set(range(5, 7 + n)),
+        "satirlar": s2,
+        "not": "Mamul grubu bazında toplam sarf; alkol tipine göre ara toplamlar. Aynı rengin farklı "
+               "alkol tiplerindeki reçete farkı bu tabloda satır satır karşılaştırılabilir.",
+    }
+
+    # ---- Sayfa 3: reçete katsayı matrisi (Excel'in 13-160. kolon bloğunun okunur hali) ----
+    s3 = []
+    for m in conn.execute("SELECT * FROM mamul WHERE belge_id=? ORDER BY satir_kodu", (bid,)):
+        kats = recete.get(m["id"], {})
+        s3.append([m["satir_kodu"], m["ad"], m["kategori"], GRUP_RENK.get(m["grup"], "—")]
+                  + [(kats.get(h["id"], 0) or "") for h in ham])
+    sayfa3 = {
+        "ad": "Reçete Katsayı Matrisi",
+        "basliklar": ["DİİB Satır Kodu", "Mamul", "Alkol Tipi", "Renk"]
+                    + [f"{h['ad']}{' (yerli)' if h['yerli'] else ''}" for h in ham],
+        "genislikler": [16, 34, 17, 14] + [12] * n,
+        "num_cols": set(range(4, 5 + n)),
+        "satirlar": s3,
+        "not": "1 kg mamul için hammadde sarf katsayıları (kapasite raporu reçeteleri). "
+               "Sarf kg = ihraç kg × katsayı.",
+    }
+
+    conn.close()
+    return {
+        "baslik": "İHRACAT FATURA SARF TABLOSU (TASLAK)",
+        "altbilgi": f"Belge: {belge['belge_no']} · {firma['unvan']} · Rapor tarihi: {date.today().isoformat()}",
+        "dosya": f"ihracat-fatura-sarf-{belge['belge_no'].replace('/', '-')}",
+        "sayfalar": [sayfa1, sayfa2, sayfa3],
+    }
+
+
 def build_kapatma(user):
     conn, belge, firma = _ctx(user)
     bid = belge["id"]
@@ -422,13 +558,13 @@ p.not{{color:#8a7430;background:#fdf6e8;border:1px solid #f2e2bd;border-radius:8
 
 
 # ================================================================ UÇLAR
-_BUILDERS = {"kdv": build_kdv, "tev": build_tev, "kapatma": build_kapatma}
+_BUILDERS = {"kdv": build_kdv, "tev": build_tev, "sarf": build_sarf, "kapatma": build_kapatma}
 
 
 @router.get("/{tip}")
 def rapor(tip: str, format: str = "xlsx", user=Depends(auth.require_user)):
     if tip not in _BUILDERS:
-        raise HTTPException(404, "Rapor: kdv | tev | kapatma")
+        raise HTTPException(404, "Rapor: kdv | tev | sarf | kapatma")
     rapor_data = _BUILDERS[tip](user)
     if format == "pdf":
         return render_pdf(rapor_data)

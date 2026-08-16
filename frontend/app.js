@@ -1528,6 +1528,8 @@ function renderRaporlar() {
         "Her ihracat kalemi için DİİB'li girdi sarfları ve KDV ödemeksizin düşülecek TL tutar (son ithalat fiyatı × ithalat kuru). Maliyeye sunulan listenin karşılığıdır.")}
       ${raporKart("tev", "⚖️", "TEV Tablosu (EK-8)",
         "AB/STA ülkelerine ihracatta 3. ülke menşeli girdiler için telafi edici vergi hesabı (%6,5). İhracat-ithalat eşleştirmeli taslak tablo.")}
+      ${raporKart("sarf", "⚗️", "İhracat Fatura Sarf Tablosu",
+        "Excel'deki İHR.FAT. SARF sayfasının karşılığı: her fatura kalemi için hammadde sarfları + alkol tipi/renk ayrımı (aynı renk, farklı alkol → farklı reçete) + reçete katsayı matrisi. 3 sayfalık set.")}
       ${raporKart("kapatma", "📦", "Kapatma Dosyası Seti",
         "Dört sayfalık set: taahhüt gerçekleşme, ithalat listesi, ihracat listesi, hammadde sarf/stok özeti — kapatma başvurusuna altlık.")}
     </div>`;

@@ -21,6 +21,12 @@
 
 ## ✅ Tamamlananlar
 
+- [x] **İhracat Fatura Sarf Tablosu raporu** (`/api/rapor/sarf`) — Excel'deki İHR.FAT. SARF sayfasının sistemleştirilmiş karşılığı, 3 sayfalık set (Görüntüle/Excel/PDF):
+  - *Fatura Sarf Dökümü*: 485 kalem satır satır — Sıra/Fatura/Tarih/Müşteri/Ülke/GTİP/DİİB Satır Kodu/Kalem No/Ürün Adı/**Alkol Tipi**/**Renk**/İhraç kg + 12 hammaddenin hesaplanmış sarf kg'ı + TOPLAM (293.840 kg, Excel ile birebir)
+  - *Alkol Tipi Özeti*: mamul grubu bazında toplamlar + alkol tipi ara toplamları — **aynı renk farklı alkol ayrımı** burada net görünür (örn. BEYAZ: etil 008→127.590 kg, metil 011→1.720 kg, isopropil 003→280 kg; reçeteler tamamen farklı)
+  - *Reçete Katsayı Matrisi*: Excel'in 13-160. kolonlarındaki katsayı bloğunun okunur hali (grup × hammadde)
+  - Renk, DİİB satır kodu grubundan türetilir (001/005/009=SİYAH, 003/008/011=BEYAZ, 004/006/012=ŞEFFAF, 002/007/010=DİĞER); alkol tipi mamul kategorisinden. Canlıda 3 formatta doğrulandı (2026-08-17)
+
 - [x] Excel analizi: DİİB-4 tüm sayfalar + DİİB klasörü belgeleri (2026-08-16)
 - [x] Local MVP: FastAPI + SQLite, fotoğraf → çıkarım → stok/taahhüt akışı
 - [x] Reçeteler + taahhüt listesi Excel'den otomatik tohum (18 grup, 15 mamul)
