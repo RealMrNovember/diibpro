@@ -351,6 +351,13 @@ def _migrate(conn):
                      ("telefon", "ALTER TABLE kullanici ADD COLUMN telefon TEXT DEFAULT ''")):
         if col not in cols:
             conn.execute(ddl)
+    # kalem düzeyi GTİP + resmi kalem no (beyanname/fatura satır numarası)
+    for tablo in ("ithalat_kalem", "ihracat_kalem"):
+        kcols = {r["name"] for r in conn.execute(f"PRAGMA table_info({tablo})")}
+        if "gtip" not in kcols:
+            conn.execute(f"ALTER TABLE {tablo} ADD COLUMN gtip TEXT DEFAULT ''")
+        if "kalem_no" not in kcols:
+            conn.execute(f"ALTER TABLE {tablo} ADD COLUMN kalem_no INTEGER")
     # varsayılan birimler
     firma = conn.execute("SELECT id FROM firma LIMIT 1").fetchone()
     if firma and conn.execute("SELECT COUNT(*) c FROM birim").fetchone()["c"] == 0:

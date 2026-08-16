@@ -34,12 +34,13 @@ ITHALAT_SCHEMA = {
                         "type": "string",
                         "description": "Eşleşen kanonik hammadde adı; listeden seç. Emin değilsen en yakınını seç.",
                     },
-                    "gtip": {"type": "string"},
+                    "gtip": {"type": "string", "description": "Kalemin GTİP kodu, örn. 32.04.17.00.00.11"},
+                    "kalem_no": {"type": "integer", "description": "Beyannamedeki kalem numarası"},
                     "miktar_kg": {"type": "number"},
                     "birim_fiyat": {"type": "number"},
                     "tutar": {"type": "number"},
                 },
-                "required": ["aciklama", "hammadde", "gtip", "miktar_kg", "birim_fiyat", "tutar"],
+                "required": ["aciklama", "hammadde", "gtip", "kalem_no", "miktar_kg", "birim_fiyat", "tutar"],
                 "additionalProperties": False,
             },
         },
@@ -71,11 +72,13 @@ IHRACAT_SCHEMA = {
                         "type": "string",
                         "description": "Eşleşen DİİB satır kodu; listeden seç. Faturada yazıyorsa onu kullan; yoksa ürün cinsine (alkol bazı + renk) göre eşle.",
                     },
+                    "gtip": {"type": "string", "description": "Kalemin GTİP kodu, örn. 32.15.19.00.00.00"},
+                    "kalem_no": {"type": "integer", "description": "Faturadaki satır numarası"},
                     "miktar_kg": {"type": "number"},
                     "birim_fiyat": {"type": "number"},
                     "tutar": {"type": "number"},
                 },
-                "required": ["urun_adi", "satir_kodu", "miktar_kg", "birim_fiyat", "tutar"],
+                "required": ["urun_adi", "satir_kodu", "gtip", "kalem_no", "miktar_kg", "birim_fiyat", "tutar"],
                 "additionalProperties": False,
             },
         },
@@ -136,7 +139,7 @@ def _content_blocks(files):
 def _system_prompt(kind: str, hammaddeler, mamuller) -> str:
     if kind == "ithalat":
         katalog = "\n".join(f"- {h['ad']} (GTİP {h['gtip'] or '?'})" for h in hammaddeler)
-        return f"""Sen AKKİM Matbaacılık'ın DİİB (Dahilde İşleme İzin Belgesi) takip sistemi için belge okuma asistanısın.
+        return f"""Sen bir DİİB (Dahilde İşleme İzin Belgesi) takip sisteminin belge okuma asistanısın.
 Sana bir İTHALAT belgesinin (gümrük giriş beyannamesi ve/veya ithalat faturası) fotoğrafları verilecek.
 Görevin: belgedeki bilgileri eksiksiz çıkarmak ve her kalemi aşağıdaki kanonik hammadde kataloğundan birine eşlemek.
 
@@ -152,7 +155,7 @@ Kurallar:
 - Okuyamadığın alanı boş/0 bırak ve guven_notu alanında belirt. Asla uydurma."""
     else:
         satirlar = "\n".join(f"- {m['satir_kodu']}: {m['ad']} (GTİP {m['gtip']})" for m in mamuller)
-        return f"""Sen AKKİM Matbaacılık'ın DİİB (Dahilde İşleme İzin Belgesi) takip sistemi için belge okuma asistanısın.
+        return f"""Sen bir DİİB (Dahilde İşleme İzin Belgesi) takip sisteminin belge okuma asistanısın.
 Sana bir İHRACAT belgesinin (ihracat faturası ve/veya gümrük çıkış beyannamesi) fotoğrafları verilecek.
 Görevin: fatura kalemlerini çıkarmak ve her ürünü aşağıdaki DİİB satır kodlarından birine eşlemek.
 

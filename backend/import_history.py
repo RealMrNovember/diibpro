@@ -61,14 +61,17 @@ def import_ithalat(conn, wb, belge_id, ham_ids):
             count += 1
             canon = dbm.canonical_hammadde(str(madde or ""))
             renkli_gelecek = str(madde or "").strip().upper() in ("PİGMENT", "PIGMENT")
+            kalem_no = int(_h) if isinstance(_h, (int, float)) else 1
+            gtip_s = str(gtip or "").strip()
             if canon in ham_ids and _num(kg) > 0 and not renkli_gelecek:
                 conn.execute(
-                    "INSERT INTO ithalat_kalem (ithalat_id, hammadde_id, aciklama, miktar_kg, birim_fiyat, tutar) VALUES (?,?,?,?,?,?)",
+                    """INSERT INTO ithalat_kalem (ithalat_id, hammadde_id, aciklama, miktar_kg,
+                           birim_fiyat, tutar, gtip, kalem_no) VALUES (?,?,?,?,?,?,?,?)""",
                     (iid, ham_ids[canon], str(madde).strip(), _num(kg), _num(bf),
-                     _num(ist_kiymet) or round(_num(kg) * _num(bf), 2)))
-            current = (iid, canon, _num(kg), _num(bf), _num(ist_kiymet), renkli_gelecek, [])
-        elif current and madde and _num(bf) and current[5]:
-            # pigment renk dökümü satırı: "RED 53.1   3000 Kg."
+                     _num(ist_kiymet) or round(_num(kg) * _num(bf), 2), gtip_s, kalem_no))
+            current = {"iid": iid, "renkli": renkli_gelecek, "gtip": gtip_s, "kalem_no": kalem_no}
+        elif current and madde and _num(bf) and current["renkli"]:
+            # pigment renk dökümü satırı: "RED 53.1   3000 Kg." — GTİP ve kalem no ana satırdan
             m = re.search(r"([\d.,]+)\s*KG", str(madde).upper().replace(" ", " "))
             qty = 0.0
             if m:
@@ -76,9 +79,10 @@ def import_ithalat(conn, wb, belge_id, ham_ids):
             renk = re.sub(r"[\d.,]+\s*KG\.?", "", str(madde), flags=re.IGNORECASE).strip()
             if qty > 0:
                 conn.execute(
-                    "INSERT INTO ithalat_kalem (ithalat_id, hammadde_id, aciklama, miktar_kg, birim_fiyat, tutar) VALUES (?,?,?,?,?,?)",
-                    (current[0], ham_ids["PİGMENT"], f"PİGMENT {renk}", qty, _num(bf),
-                     _num(ist_kiymet) or round(qty * _num(bf), 2)))
+                    """INSERT INTO ithalat_kalem (ithalat_id, hammadde_id, aciklama, miktar_kg,
+                           birim_fiyat, tutar, gtip, kalem_no) VALUES (?,?,?,?,?,?,?,?)""",
+                    (current["iid"], ham_ids["PİGMENT"], f"PİGMENT {renk}", qty, _num(bf),
+                     _num(ist_kiymet) or round(qty * _num(bf), 2), current["gtip"], current["kalem_no"]))
 
     # renk dökümü verilmemiş pigment ana satırları için toplam kalem oluştu mu kontrolü
     for row in conn.execute(
@@ -146,9 +150,12 @@ def import_ihracat(conn, wb, belge_id, mamul_by_kod):
             mamul = next((m for k2, m in mamul_by_kod.items() if k2.endswith("." + g)), None) if g else None
         if not mamul:
             continue
+        gtip_s = str(gtip or "").strip().replace(" ", "")
+        fsn = int(_fsn) if isinstance(_fsn, (int, float)) else None
         conn.execute(
-            "INSERT INTO ihracat_kalem (ihracat_id, mamul_id, urun_adi, miktar_kg) VALUES (?,?,?,?)",
-            (current_id, mamul["id"], urun_s[:80], _num(kg)))
+            """INSERT INTO ihracat_kalem (ihracat_id, mamul_id, urun_adi, miktar_kg, gtip, kalem_no)
+               VALUES (?,?,?,?,?,?)""",
+            (current_id, mamul["id"], urun_s[:80], _num(kg), gtip_s, fsn))
     return count
 
 
@@ -159,7 +166,8 @@ def run(excel_path: str = EXCEL_DEFAULT):
     belge_id = belge["id"]
     firma_id = belge["firma_id"]
 
-    # idempotent: eski aktarımı temizle
+    # idempotent: eski aktarımı ve ona bağlı otomatik muhasebe faturalarını temizle
+    conn.execute("DELETE FROM fatura WHERE firma_id=? AND kaynak IN ('ithalat','ihracat')", (firma_id,))
     conn.execute("DELETE FROM ithalat WHERE kaynak='excel-aktarim' AND belge_id=?", (belge_id,))
     conn.execute("DELETE FROM ihracat WHERE kaynak='excel-aktarim' AND belge_id=?", (belge_id,))
 
@@ -169,6 +177,7 @@ def run(excel_path: str = EXCEL_DEFAULT):
     wb = openpyxl.load_workbook(excel_path, data_only=True, read_only=True)
     n_ith = import_ithalat(conn, wb, belge_id, ham_ids)
     n_ihr = import_ihracat(conn, wb, belge_id, mamul_by_kod)
+    dbm._backfill_muhasebe(conn, firma_id)  # oto faturaları yeni kayıtlara göre yeniden üret
     conn.commit()
 
     kalem_ith = conn.execute("SELECT COUNT(*) c FROM ithalat_kalem k JOIN ithalat i ON i.id=k.ithalat_id WHERE i.kaynak='excel-aktarim'").fetchone()["c"]

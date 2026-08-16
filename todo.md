@@ -1,0 +1,46 @@
+# DİİBPro — Yapılacaklar Listesi
+
+> Bu dosya projenin canlı iş listesidir. Her geliştirme turunda güncellenir:
+> yeni işler eklenir, bitenler ✅ işaretlenir. Sıralama = öncelik.
+
+## 🟡 Sırada — kullanıcı talepleri
+
+- [ ] Hammadde kartlarına belge ithalat satır kodlarını (24.2.03798.xxx) işle (kullanıcıdan liste bekleniyor — İthalat tablosundaki "DİİB Kodu" kolonu bunun için boş)
+- [ ] Varsayılan admin parolası değişimi (kullanıcı yapacak / talep ederse sunucudan değiştirilecek)
+- [ ] Cloudflare SSL modu Full'e alınırsa origin https yönlendirmesini geri ekle
+
+## 🟢 Yol haritası — SaaS fazı (docs/SAAS-MIMARI.md)
+
+- [ ] KDV istisna listesi raporu (maliye formatı — Excel'deki "KDV açısından maliye listesi" karşılığı)
+- [ ] TEV tablosu (EK-8) raporu — ihracat×ithalat eşleştirme, %6,5 hesap
+- [ ] Kapatma dosyası seti (taahhüt hesabı + kapanış dilekçesi çıktıları)
+- [ ] Uyarı motoru: belge süresi, taahhüt açığı, izin aşımı, eksi stok (+ e-posta)
+- [ ] TCMB EVDS kur servisi (kur alanı otomatik dolsun)
+- [ ] DYS XML/Excel içe aktarım (sürükle-bırak)
+- [ ] Muhasebede döviz ayrıştırması (USD/EUR bakiyeleri ayrı; şu an tek havuz)
+- [ ] Deploy script (tek komut: paketle → yükle → restart)
+- [ ] Günlük veritabanı yedeği (cron, sunucuda)
+- [ ] PostgreSQL + Docker Compose geçişi (çok kiracılı ölçekleme)
+- [ ] Gümrük müşaviri paneli (çok firma görünümü)
+- [ ] e-Fatura XML alımı
+
+## ✅ Tamamlananlar
+
+- [x] Excel analizi: DİİB-4 tüm sayfalar + DİİB klasörü belgeleri (2026-08-16)
+- [x] Local MVP: FastAPI + SQLite, fotoğraf → çıkarım → stok/taahhüt akışı
+- [x] Reçeteler + taahhüt listesi Excel'den otomatik tohum (18 grup, 15 mamul)
+- [x] Pazar araştırması (rakip DİİB yazılımları) + SaaS mimari dokümanı
+- [x] OCR motoru (Tesseract tur+eng, varsayılan, ücretsiz) — AI opsiyonel hale getirildi
+- [x] Showcase sayfası + login sistemi (scrypt + oturum çerezi)
+- [x] Masaüstü kenar menülü panel + mobil ayrı görünüm
+- [x] Matek Kimya firma kaydı; Excel geçmişi aktarımı (7 ithalat, 39 ihracat, 484 kalem, 293.680 kg)
+- [x] Filtreleme (arama, tarih aralığı, kaynak) — ithalat/ihracat listeleri
+- [x] Profil sayfası (bilgi + parola değiştirme)
+- [x] Yönetim: çalışan ekleme (rol: yönetici/operatör/izleyici), birim yönetimi
+- [x] Fabrika modülleri: Muhasebe (cari/fatura/ödeme, otomatik backfill), Depo (stok+hareket), Üretim (iş emri → otomatik depo hareketleri), Kalite Kontrol (test kayıtları)
+- [x] Panelde birim özet kartları
+- [x] Sunucu dağıtımı: diibpro.cicibyte.com (systemd + nginx + SSL, Cloudflare)
+- [x] Excel benzeri kalem tabloları: sıralama, sürükle-bırak sütun düzeni (kullanıcıya kayıtlı), göster/gizle, CSV, satır düzenle/sil/indir
+- [x] Sol menü scroll düzeltmesi
+- [x] GitHub reposu + profesyonel README (github.com/RealMrNovember/diibpro)
+- [x] Kalem detayları: GTİP + gerçek kalem no (beyanname/fatura satır numarası) — DB, Excel aktarımı (484/484 dolu), API, OCR/AI şemaları, formlar, düzenleme kutusu; canlıda doğrulandı (2026-08-16)

@@ -260,10 +260,12 @@ function renderDraftForm() {
     const opts = META.hammaddeler.map(h => `<option value="${h.id}">${esc(h.ad)}</option>`).join("");
     const kalems = (d.kalemler || []).map((k, i) => `
       <div class="kalem" data-i="${i}">
-        <div class="khead"><span>Kalem ${i + 1} — ${esc(k.aciklama)}</span>
+        <div class="khead"><span>Kalem ${k.kalem_no || i + 1} — ${esc(k.aciklama)}</span>
           <button class="danger-link" onclick="delKalem(${i})">Sil</button></div>
         <div class="field"><label>Hammadde</label><select class="k-ham">${opts}</select></div>
         <div class="grid3">
+          <div class="field"><label>Kalem No</label><input class="k-kno mini" type="number" value="${k.kalem_no || i + 1}"></div>
+          <div class="field" style="grid-column:span 2"><label>GTİP</label><input class="k-gtip mini" style="text-align:left" value="${esc(k.gtip)}" placeholder="32.04.17.00.00.11"></div>
           <div class="field"><label>Miktar (kg)</label><input class="k-kg mini" type="number" step="any" value="${k.miktar_kg || 0}"></div>
           <div class="field"><label>Birim Fiyat</label><input class="k-bf mini" type="number" step="any" value="${k.birim_fiyat || 0}"></div>
           <div class="field"><label>Tutar</label><input class="k-tut mini" type="number" step="any" value="${k.tutar || 0}"></div>
@@ -302,6 +304,8 @@ function renderDraftForm() {
         <div class="field"><label>Ürün Adı</label><input class="k-urun mini" style="text-align:left" value="${esc(k.urun_adi)}"></div>
         <div class="field"><label>DİİB Satır Kodu</label><select class="k-mamul">${opts}</select></div>
         <div class="grid3">
+          <div class="field"><label>Kalem No</label><input class="k-kno mini" type="number" value="${k.kalem_no || i + 1}"></div>
+          <div class="field" style="grid-column:span 2"><label>GTİP</label><input class="k-gtip mini" style="text-align:left" value="${esc(k.gtip)}" placeholder="32.15.19.00.00.00"></div>
           <div class="field"><label>Miktar (kg)</label><input class="k-kg mini" type="number" step="any" value="${k.miktar_kg || 0}"></div>
           <div class="field"><label>Birim Fiyat</label><input class="k-bf mini" type="number" step="any" value="${k.birim_fiyat || 0}"></div>
           <div class="field"><label>Tutar</label><input class="k-tut mini" type="number" step="any" value="${k.tutar || 0}"></div>
@@ -355,6 +359,8 @@ function syncDraftFromForm() {
     $$(".kalem", fa).forEach((el, i) => {
       const k = draft.kalemler[i];
       k._hammadde_id = +el.querySelector(".k-ham").value;
+      k.gtip = el.querySelector(".k-gtip").value.trim();
+      k.kalem_no = +el.querySelector(".k-kno").value || i + 1;
       k.miktar_kg = +el.querySelector(".k-kg").value || 0;
       k.birim_fiyat = +el.querySelector(".k-bf").value || 0;
       k.tutar = +el.querySelector(".k-tut").value || 0;
@@ -369,6 +375,8 @@ function syncDraftFromForm() {
       const k = draft.kalemler[i];
       k.urun_adi = el.querySelector(".k-urun").value;
       k._mamul_id = +el.querySelector(".k-mamul").value;
+      k.gtip = el.querySelector(".k-gtip").value.trim();
+      k.kalem_no = +el.querySelector(".k-kno").value || i + 1;
       k.miktar_kg = +el.querySelector(".k-kg").value || 0;
       k.birim_fiyat = +el.querySelector(".k-bf").value || 0;
       k.tutar = +el.querySelector(".k-tut").value || 0;
@@ -384,6 +392,7 @@ async function saveIthalat() {
     tutar: draft.toplam_tutar, kur: draft.kur, image_paths: draftImages, kaynak: currentEngine,
     kalemler: draft.kalemler.filter(k => k.miktar_kg > 0).map(k => ({
       hammadde_id: k._hammadde_id, aciklama: k.aciklama || "",
+      gtip: k.gtip || "", kalem_no: k.kalem_no || null,
       miktar_kg: k.miktar_kg, birim_fiyat: k.birim_fiyat, tutar: k.tutar,
     })),
   };
@@ -403,6 +412,7 @@ async function saveIhracat() {
     tutar: draft.toplam_tutar, image_paths: draftImages, kaynak: currentEngine,
     kalemler: draft.kalemler.filter(k => k.miktar_kg > 0).map(k => ({
       mamul_id: k._mamul_id, urun_adi: k.urun_adi || "",
+      gtip: k.gtip || "", kalem_no: k.kalem_no || null,
       miktar_kg: k.miktar_kg, birim_fiyat: k.birim_fiyat, tutar: k.tutar,
     })),
   };
@@ -768,6 +778,8 @@ window.editKalem = (kind, kid) => {
       <div class="field"><label>${isIth ? "Açıklama / Ürün" : "Ürün Adı"}</label>
         <input id="em_urun" value="${esc(isIth ? r.aciklama : r.urun_adi)}"></div>
       <div class="field"><label>${isIth ? "Hammadde" : "DİİB Satır Kodu (Mamul)"}</label>${katalogSel}</div>
+      <div class="field"><label>GTİP</label><input id="em_gtip" value="${esc(r.gtip)}" placeholder="32.04.17.00.00.11"></div>
+      <div class="field"><label>Kalem No</label><input id="em_kno" type="number" value="${r.kalem_no || ""}"></div>
       <div class="field"><label>Miktar (kg)</label><input id="em_kg" type="number" step="any" value="${r.miktar_kg}"></div>
       <div class="field"><label>Birim Fiyat</label><input id="em_bf" type="number" step="any" value="${r.birim_fiyat}"></div>
       <div class="field"><label>Tutar</label><input id="em_tutar" type="number" step="any" value="${r.tutar}"></div>
@@ -790,6 +802,8 @@ window.saveKalem = async (kind, kid) => {
     birim_fiyat: +$("#em_bf").value || 0,
     tutar: +$("#em_tutar").value || 0,
     tarih: $("#em_tarih").value,
+    gtip: $("#em_gtip").value.trim(),
+    kalem_no: +$("#em_kno").value || null,
   };
   if (isIth) {
     body.aciklama = $("#em_urun").value;

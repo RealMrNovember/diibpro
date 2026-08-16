@@ -268,6 +268,8 @@ class IthalatKalem(BaseModel):
     miktar_kg: float
     birim_fiyat: float = 0
     tutar: float = 0
+    gtip: str = ""
+    kalem_no: int | None = None
 
 
 class IthalatCreate(BaseModel):
@@ -300,10 +302,12 @@ def api_ithalat_create(body: IthalatCreate, user=Depends(auth.require_user)):
          body.mense, body.doviz, body.tutar, body.kur, body.notlar, body.kaynak,
          json.dumps(body.image_paths)))
     iid = cur.lastrowid
-    for k in body.kalemler:
+    for n, k in enumerate(body.kalemler, 1):
         conn.execute(
-            "INSERT INTO ithalat_kalem (ithalat_id, hammadde_id, aciklama, miktar_kg, birim_fiyat, tutar) VALUES (?,?,?,?,?,?)",
-            (iid, k.hammadde_id, k.aciklama, k.miktar_kg, k.birim_fiyat, k.tutar))
+            """INSERT INTO ithalat_kalem (ithalat_id, hammadde_id, aciklama, miktar_kg,
+                   birim_fiyat, tutar, gtip, kalem_no) VALUES (?,?,?,?,?,?,?,?)""",
+            (iid, k.hammadde_id, k.aciklama, k.miktar_kg, k.birim_fiyat, k.tutar,
+             k.gtip, k.kalem_no or n))
     dbm._backfill_muhasebe(conn, user["firma_id"])  # cari + alış faturası otomatik
     conn.commit()
     conn.close()
@@ -354,10 +358,12 @@ def api_ithalat_kalemler(user=Depends(auth.require_user), q: str = "", baslangic
     conn = dbm.get_conn()
     belge = get_belge(conn, user)
     sql = """SELECT k.id kalem_id, i.id ithalat_id, k.aciklama, h.ad hammadde_ad,
-                    h.satir_kodu diib_kodu, h.gtip, i.beyanname_no, i.fatura_no, i.tarih,
+                    h.satir_kodu diib_kodu,
+                    COALESCE(NULLIF(k.gtip,''), h.gtip) gtip,
+                    i.beyanname_no, i.fatura_no, i.tarih,
                     i.satici firma, i.mense ulke, i.gumruk, k.miktar_kg, k.birim_fiyat,
                     k.tutar, i.doviz, i.kur, i.kaynak, i.image_paths,
-                    ROW_NUMBER() OVER (PARTITION BY i.id ORDER BY k.id) kalem_no
+                    COALESCE(k.kalem_no, ROW_NUMBER() OVER (PARTITION BY i.id ORDER BY k.id)) kalem_no
              FROM ithalat_kalem k
              JOIN ithalat i ON i.id = k.ithalat_id
              JOIN hammadde h ON h.id = k.hammadde_id
@@ -386,6 +392,8 @@ class IthalatKalemUpdate(BaseModel):
     miktar_kg: float | None = None
     birim_fiyat: float | None = None
     tutar: float | None = None
+    gtip: str | None = None
+    kalem_no: int | None = None
     # başlık alanları (aynı beyannamedeki tüm kalemleri etkiler)
     beyanname_no: str | None = None
     tarih: str | None = None
@@ -404,7 +412,7 @@ def api_ithalat_kalem_update(kid: int, body: IthalatKalemUpdate, user=Depends(au
     if not row:
         conn.close()
         raise HTTPException(404, "Kalem bulunamadı")
-    for field in ("hammadde_id", "aciklama", "miktar_kg", "birim_fiyat", "tutar"):
+    for field in ("hammadde_id", "aciklama", "miktar_kg", "birim_fiyat", "tutar", "gtip", "kalem_no"):
         val = getattr(body, field)
         if val is not None:
             conn.execute(f"UPDATE ithalat_kalem SET {field}=? WHERE id=?", (val, kid))
@@ -454,6 +462,8 @@ class IhracatKalem(BaseModel):
     miktar_kg: float
     birim_fiyat: float = 0
     tutar: float = 0
+    gtip: str = ""
+    kalem_no: int | None = None
 
 
 class IhracatCreate(BaseModel):
@@ -483,10 +493,12 @@ def api_ihracat_create(body: IhracatCreate, user=Depends(auth.require_user)):
         (belge["id"], body.fatura_no, body.beyanname_no, body.tarih, body.musteri, body.ulke,
          body.doviz, body.tutar, body.notlar, body.kaynak, json.dumps(body.image_paths)))
     iid = cur.lastrowid
-    for k in body.kalemler:
+    for n, k in enumerate(body.kalemler, 1):
         conn.execute(
-            "INSERT INTO ihracat_kalem (ihracat_id, mamul_id, urun_adi, miktar_kg, birim_fiyat, tutar) VALUES (?,?,?,?,?,?)",
-            (iid, k.mamul_id, k.urun_adi, k.miktar_kg, k.birim_fiyat, k.tutar))
+            """INSERT INTO ihracat_kalem (ihracat_id, mamul_id, urun_adi, miktar_kg,
+                   birim_fiyat, tutar, gtip, kalem_no) VALUES (?,?,?,?,?,?,?,?)""",
+            (iid, k.mamul_id, k.urun_adi, k.miktar_kg, k.birim_fiyat, k.tutar,
+             k.gtip, k.kalem_no or n))
     dbm._backfill_muhasebe(conn, user["firma_id"])  # cari + satış faturası otomatik
     conn.commit()
     conn.close()
@@ -523,10 +535,12 @@ def api_ihracat_kalemler(user=Depends(auth.require_user), q: str = "", baslangic
     conn = dbm.get_conn()
     belge = get_belge(conn, user)
     sql = """SELECT k.id kalem_id, i.id ihracat_id, k.urun_adi, m.ad mamul_ad,
-                    m.satir_kodu diib_kodu, m.gtip, i.fatura_no, i.beyanname_no, i.tarih,
+                    m.satir_kodu diib_kodu,
+                    COALESCE(NULLIF(k.gtip,''), m.gtip) gtip,
+                    i.fatura_no, i.beyanname_no, i.tarih,
                     i.musteri firma, i.ulke, i.gumruk, k.miktar_kg, k.birim_fiyat,
                     k.tutar, i.doviz, i.kaynak, i.kapanis_tarihi, i.image_paths,
-                    ROW_NUMBER() OVER (PARTITION BY i.id ORDER BY k.id) kalem_no
+                    COALESCE(k.kalem_no, ROW_NUMBER() OVER (PARTITION BY i.id ORDER BY k.id)) kalem_no
              FROM ihracat_kalem k
              JOIN ihracat i ON i.id = k.ihracat_id
              JOIN mamul m ON m.id = k.mamul_id
@@ -555,6 +569,8 @@ class IhracatKalemUpdate(BaseModel):
     miktar_kg: float | None = None
     birim_fiyat: float | None = None
     tutar: float | None = None
+    gtip: str | None = None
+    kalem_no: int | None = None
     fatura_no: str | None = None
     beyanname_no: str | None = None
     tarih: str | None = None
@@ -572,7 +588,7 @@ def api_ihracat_kalem_update(kid: int, body: IhracatKalemUpdate, user=Depends(au
     if not row:
         conn.close()
         raise HTTPException(404, "Kalem bulunamadı")
-    for field in ("mamul_id", "urun_adi", "miktar_kg", "birim_fiyat", "tutar"):
+    for field in ("mamul_id", "urun_adi", "miktar_kg", "birim_fiyat", "tutar", "gtip", "kalem_no"):
         val = getattr(body, field)
         if val is not None:
             conn.execute(f"UPDATE ihracat_kalem SET {field}=? WHERE id=?", (val, kid))

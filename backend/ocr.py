@@ -233,12 +233,15 @@ def parse_ithalat(text: str, hammaddeler) -> dict:
             qty = _tr_num(qm.group(1))
             if qty <= 0:
                 continue
-            nums = [_tr_num(x) for x in re.findall(r"[\d.]+,\d+|\d+[.,]\d+", line)]
+            gm = _RE_GTIP.search(line)
+            km = re.match(r"^\s*(\d{1,2})[\s.)-]", line)
+            nums = [_tr_num(x) for x in re.findall(r"[\d.]+,\d+|\d+[.,]\d+", _RE_GTIP.sub(" ", line))]
             bf = next((n for n in nums if 0.1 < n < 100 and n != qty), 0)
             kalemler.append({
                 "aciklama": line.strip()[:80],
                 "hammadde": rec["ad"],
-                "gtip": rec.get("gtip") or "",
+                "gtip": ".".join(gm.groups()) if gm else (rec.get("gtip") or ""),
+                "kalem_no": int(km.group(1)) if km else len(kalemler) + 1,
                 "miktar_kg": qty,
                 "birim_fiyat": bf,
                 "tutar": round(qty * bf, 2) if bf else 0,
@@ -306,8 +309,10 @@ def parse_ihracat(text: str, mamuller) -> dict:
             continue
         skm = _RE_SATIR_KODU.search(line)
         satir_kodu = ".".join(skm.groups()) if skm else ""
-        # satır kodunu metinden çıkar ki ürün adına ve fiyat aramaya karışmasın
-        clean_line = _RE_SATIR_KODU.sub(" ", line)
+        gm = _RE_GTIP.search(_RE_SATIR_KODU.sub(" ", line))
+        km = re.match(r"^\s*(\d{1,2})[\s.)-]", line)
+        # satır kodunu ve GTİP'i metinden çıkar ki ürün adına ve fiyat aramaya karışmasın
+        clean_line = _RE_GTIP.sub(" ", _RE_SATIR_KODU.sub(" ", line))
         qm2 = _RE_QTY_KG.search(clean_line) or qm
         # ürün adı: satırda miktardan önceki metin
         urun = clean_line[:qm2.start()].strip(" -:;\t")
@@ -322,6 +327,8 @@ def parse_ihracat(text: str, mamuller) -> dict:
         kalemler.append({
             "urun_adi": urun,
             "satir_kodu": satir_kodu,
+            "gtip": ".".join(gm.groups()) if gm else "",
+            "kalem_no": int(km.group(1)) if km else len(kalemler) + 1,
             "miktar_kg": qty,
             "birim_fiyat": bf,
             "tutar": round(qty * bf, 2) if bf else 0,
