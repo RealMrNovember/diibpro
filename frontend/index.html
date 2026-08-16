@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DİİBPro — Uygulama</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="side-logo">DİİB<b>Pro</b></div>
+    <div class="side-firma" id="sideFirma"></div>
+    <nav class="side-nav" id="sideNav">
+      <button data-tab="panel" class="active"><span class="ico">📊</span> Panel</button>
+      <div class="side-sec">DIŞ TİCARET / DİİB</div>
+      <button data-tab="yeni"><span class="ico">📷</span> Yeni Kayıt</button>
+      <button data-tab="ithalat"><span class="ico">📥</span> İthalat</button>
+      <button data-tab="ihracat"><span class="ico">📤</span> İhracat</button>
+      <button data-tab="tanimlar"><span class="ico">🧪</span> Tanımlar</button>
+      <div class="side-sec">FABRİKA</div>
+      <button data-tab="depo"><span class="ico">📦</span> Depo</button>
+      <button data-tab="uretim"><span class="ico">🏭</span> Üretim</button>
+      <button data-tab="kalite"><span class="ico">🔬</span> Kalite Kontrol</button>
+      <button data-tab="muhasebe"><span class="ico">🧾</span> Muhasebe</button>
+      <div class="side-sec">HESAP</div>
+      <button data-tab="yonetim" data-admin="1"><span class="ico">👥</span> Yönetim</button>
+      <button data-tab="profil"><span class="ico">👤</span> Profil</button>
+    </nav>
+    <div class="side-foot">
+      <div id="sideUser"></div>
+      <button id="btnLogout" class="linkbtn">Çıkış Yap</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <header>
+      <div class="brand">DİİB<span>Pro</span> <em id="topFirma"></em></div>
+      <div class="belge-no" id="belgeNo"></div>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button data-tab="panel" class="active"><span class="ico">📊</span>Panel</button>
+  <button data-tab="yeni"><span class="ico">📷</span>Yeni</button>
+  <button data-tab="ithalat"><span class="ico">📥</span>İthalat</button>
+  <button data-tab="ihracat"><span class="ico">📤</span>İhracat</button>
+  <button id="btnMore"><span class="ico">☰</span>Menü</button>
+</nav>
+
+<div class="sheet-back" id="sheetBack">
+  <div class="sheet">
+    <button data-tab="depo" class="sheet-item">📦 Depo</button>
+    <button data-tab="uretim" class="sheet-item">🏭 Üretim</button>
+    <button data-tab="kalite" class="sheet-item">🔬 Kalite Kontrol</button>
+    <button data-tab="muhasebe" class="sheet-item">🧾 Muhasebe</button>
+    <button data-tab="tanimlar" class="sheet-item">🧪 Tanımlar</button>
+    <button data-tab="yonetim" data-admin="1" class="sheet-item">👥 Yönetim</button>
+    <button data-tab="profil" class="sheet-item">👤 Profil</button>
+    <button id="btnLogoutM" class="sheet-item danger">🚪 Çıkış Yap</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

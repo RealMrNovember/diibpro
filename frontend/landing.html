@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DİİBPro — Dahilde İşleme Takip Sistemi</title>
+<style>
+:root {
+  --navy: #0b2e4f; --navy-2: #0f4c81; --blue: #1273c4; --sky: #e8f2fb;
+  --ink: #1c2733; --muted: #5b7186; --line: #e3e9f0; --ok: #178a50;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #fff; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
+
+header { position: sticky; top: 0; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); z-index: 10; }
+.nav { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+.logo { font-size: 21px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; }
+.logo b { color: var(--blue); }
+.nav a.btn { text-decoration: none; background: var(--blue); color: #fff; padding: 10px 22px; border-radius: 10px; font-weight: 700; font-size: 14px; }
+.nav .links { display: flex; gap: 26px; align-items: center; }
+.nav .links a { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 600; }
+@media (max-width: 700px) { .nav .links a:not(.btn) { display: none; } }
+
+.hero { background: linear-gradient(180deg, var(--sky), #fff 78%); padding: 74px 0 60px; }
+.hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 44px; align-items: center; }
+@media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; } }
+.hero h1 { font-size: 42px; line-height: 1.15; letter-spacing: -1px; color: var(--navy); }
+.hero h1 span { color: var(--blue); }
+.hero p.sub { margin: 18px 0 28px; font-size: 17px; line-height: 1.6; color: var(--muted); max-width: 480px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.cta a { text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 15px; }
+.cta .p { background: var(--blue); color: #fff; box-shadow: 0 6px 18px rgba(18,115,196,.3); }
+.cta .s { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+.badges { margin-top: 26px; display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.badges span::before { content: "✓ "; color: var(--ok); font-weight: 800; }
+
+.mock { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px rgba(11,46,79,.14); overflow: hidden; }
+.mock .bar { background: var(--navy-2); color: #fff; padding: 12px 16px; font-size: 13px; font-weight: 700; display:flex; justify-content:space-between; }
+.mock .body { padding: 16px; display: grid; gap: 10px; }
+.mock .kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mock .kpi div { background: var(--sky); border-radius: 10px; padding: 12px; }
+.mock .kpi b { font-size: 20px; color: var(--navy-2); display: block; }
+.mock .kpi small { color: var(--muted); font-size: 11px; }
+.mock .row { font-size: 12.5px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 7px 2px; color: var(--ink); }
+.mock .prog { height: 7px; border-radius: 5px; background: #e3ecf4; margin-top: 4px; overflow: hidden; }
+.mock .prog i { display: block; height: 100%; background: var(--blue); }
+
+section.feats { padding: 66px 0; }
+h2.sec { text-align: center; font-size: 30px; color: var(--navy); letter-spacing: -.5px; }
+p.sec-sub { text-align: center; color: var(--muted); margin: 10px auto 40px; max-width: 560px; font-size: 15px; line-height: 1.6; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+.feat { border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+.feat .ico { font-size: 28px; }
+.feat h3 { margin: 12px 0 8px; font-size: 16.5px; color: var(--navy); }
+.feat p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.feat .tag { display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--sky); color: var(--blue); }
+
+.how { background: var(--sky); padding: 60px 0; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
+@media (max-width: 860px) { .steps { grid-template-columns: 1fr 1fr; } }
+.step { background: #fff; border-radius: 14px; padding: 20px; }
+.step::before { counter-increment: s; content: counter(s); display: inline-flex; width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: #fff; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 10px; }
+.step h4 { font-size: 14.5px; color: var(--navy); margin-bottom: 6px; }
+.step p { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+footer { border-top: 1px solid var(--line); padding: 28px 0; }
+footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo">DİİB<b>Pro</b></div>
+    <div class="links">
+      <a href="#ozellikler">Özellikler</a>
+      <a href="#nasil">Nasıl Çalışır</a>
+      <a class="btn" href="/login">Giriş Yap</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Dahilde İşleme Belgeniz<br><span>kendi kendini yönetsin</span></h1>
+      <p class="sub">Gümrük beyannamesi ve fatura fotoğrafından otomatik veri çıkarma, reçeteye göre
+      sarf düşümü, canlı taahhüt takibi. Excel tablolarına ve elle hesaplamaya son.</p>
+      <div class="cta">
+        <a class="p" href="/login">Sisteme Giriş</a>
+        <a class="s" href="#ozellikler">Özellikleri İncele</a>
+      </div>
+      <div class="badges">
+        <span>OCR ile ücretsiz belge okuma</span>
+        <span>Opsiyonel AI destekli okuma</span>
+        <span>Web + mobil</span>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="bar"><span>DİİBPro · Panel</span><span>2024/D1-03798</span></div>
+      <div class="body">
+        <div class="kpi">
+          <div><b>%24,8</b><small>Taahhüt gerçekleşme</small></div>
+          <div><b>293.680 kg</b><small>Toplam ihracat</small></div>
+        </div>
+        <div class="row"><span>ETİL ALKOL BAZLI BEYAZ</span><span>81.215 / 612.500 kg</span></div>
+        <div class="prog"><i style="width:13%"></i></div>
+        <div class="row"><span>ETİL ALKOL BAZLI DİĞER</span><span>48.357 / 250.000 kg</span></div>
+        <div class="prog"><i style="width:19%"></i></div>
+        <div class="row"><span>NİTROSELÜLOZ REÇİNE stok</span><span>14.368 kg</span></div>
+        <div class="prog"><i style="width:37%; background:#178a50"></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="feats wrap" id="ozellikler">
+  <h2 class="sec">Tek platformda DİİB operasyonu</h2>
+  <p class="sec-sub">Belge açılışından kapatmaya kadar tüm süreç: ithalat, ihracat, sarf, stok ve taahhüt tek ekranda.</p>
+  <div class="grid">
+    <div class="feat"><div class="ico">📷</div><h3>Fotoğraftan Belge Okuma</h3>
+      <p>Beyanname veya faturanın fotoğrafını çekin; OCR motoru alanları ayrıştırıp formu doldurur. Kontrol edin, onaylayın — kayıt hazır.</p>
+      <span class="tag">OCR ücretsiz · AI opsiyonel</span></div>
+    <div class="feat"><div class="ico">⚗️</div><h3>Otomatik Sarf Hesabı</h3>
+      <p>Kapasite raporu reçetelerine göre her ihracat kaleminden hammadde sarfı otomatik düşülür. Katsayılar ekrandan yönetilir.</p></div>
+    <div class="feat"><div class="ico">🎯</div><h3>Canlı Taahhüt Takibi</h3>
+      <p>Satır kodu bazında gerçekleşme yüzdesi, kalan miktar ve belge süresi tek bakışta. Kapatmaya hazır olup olmadığınızı her an bilin.</p></div>
+    <div class="feat"><div class="ico">📦</div><h3>DİİB Stok Yönetimi</h3>
+      <p>Belge kapsamı ithal hammadde stoğu; eşdeğer eşya bakiyeleri dahil. Eksiye düşen kalemler anında görünür.</p></div>
+    <div class="feat"><div class="ico">🗂️</div><h3>Belge Arşivi</h3>
+      <p>Yüklenen her beyanname ve fatura görseli kayıtla birlikte arşivlenir; denetimde tek tıkla erişilir.</p></div>
+    <div class="feat"><div class="ico">📊</div><h3>Raporlama</h3>
+      <p>Aylık ihracat özetleri, hammadde bazlı dökümler. KDV istisna listesi, TEV tablosu ve kapatma seti yol haritasında.</p>
+      <span class="tag">Yakında</span></div>
+  </div>
+</section>
+
+<section class="how" id="nasil">
+  <div class="wrap">
+    <h2 class="sec">Nasıl çalışır?</h2>
+    <p class="sec-sub">Dört adımda beyanname kaydından güncel taahhüt tablosuna.</p>
+    <div class="steps">
+      <div class="step"><h4>Fotoğraf çekin</h4><p>Telefon veya bilgisayardan beyanname/fatura görselini ya da PDF'ini yükleyin.</p></div>
+      <div class="step"><h4>Sistem okusun</h4><p>OCR (ücretsiz) veya AI motoru alanları ayrıştırır; kalemleri satır kodlarına eşler.</p></div>
+      <div class="step"><h4>Kontrol edin</h4><p>Önceden doldurulmuş formu gözden geçirin, gerekiyorsa düzeltin, onaylayın.</p></div>
+      <div class="step"><h4>Takip edin</h4><p>Stok düşer, taahhüt gerçekleşmesi güncellenir, paneliniz her an günceldir.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 DİİBPro — Dahilde İşleme Takip Sistemi</span>
+    <span><a href="/login" style="color:var(--blue);text-decoration:none;font-weight:600">Müşteri Girişi →</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

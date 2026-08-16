@@ -1,0 +1,544 @@
+{
+  "belge": {
+    "belge_no": "2024/D1-03798",
+    "belge_tarihi": "2024-07-22",
+    "sure_sonu": "2025-04-22",
+    "firma": "AKKİM MATBAACILIK ve KİMYA SAN.TİC.LTD.ŞTİ.",
+    "vergi_no": "0300077479",
+    "ongorulen_ihracat_usd": 5854300,
+    "ongorulen_ithalat_usd": 2374198.25
+  },
+  "mamuller": [
+    {
+      "satir_kodu": "24.1.03798.001",
+      "gtip": "32.15.11.00.00.00",
+      "ad": "MATBAA MUREKKEBI ( ISOPROPIL ALKOL BAZLi SIYAH)",
+      "taahhut_kg": 10000.0,
+      "birim_fiyat_usd": 5.1
+    },
+    {
+      "satir_kodu": "24.1.03798.002",
+      "gtip": "32.15.19.00.00.00",
+      "ad": "MATBAA MUREKKEBI (ISOPROPIL ALKOL BAZLi DIGER)",
+      "taahhut_kg": 60000.0,
+      "birim_fiyat_usd": 5.55
+    },
+    {
+      "satir_kodu": "24.1.03798.003",
+      "gtip": "32.15.19.00.00.00",
+      "ad": "MATBAA MUREKKEBI (ISOPROPIL ALKOL BAZLi BEYAZ)",
+      "taahhut_kg": 20000.0,
+      "birim_fiyat_usd": 3.64
+    },
+    {
+      "satir_kodu": "24.1.03798.004",
+      "gtip": "32.15.19.00.00.00",
+      "ad": "MATBAA MUREKKEBI ( ISOPROPIL ALKOL BAZLi SEFFAF)",
+      "taahhut_kg": 3000.0,
+      "birim_fiyat_usd": 5.25
+    },
+    {
+      "satir_kodu": "24.1.03798.005",
+      "gtip": "32.15.11.00.00.00",
+      "ad": "MATBAA MUREKKEBI ( ETIL ALKOL BAZLi SIYAH)",
+      "taahhut_kg": 80000.0,
+      "birim_fiyat_usd": 3.65
+    },
+    {
+      "satir_kodu": "24.1.03798.006",
+      "gtip": "32.15.19.00.00.00",
+      "ad": "MATBAA MUREKKEBI (ETIL ALKOL BAZLi SEFFAF)",
+      "taahhut_kg": 20000.0,
+      "birim_fiyat_usd": 7.15
+    },
+    {
+      "satir_kodu": "24.1.03798.007",
+      "gtip": "32.15.19.00.00.00",
+      "ad": "MATBAA MUREKKEBI (ETIL ALKOL BAZLi DIGER..)",
+      "taahhut_kg": 250000.0,
+      "birim_fiyat_usd": 5.25
+    },
+    {
+      "satir_kodu": "24.1.03798.008",
+      "gtip": "32.15.19.00.00.00",
+      "ad": "MATBAA MUREKKEBI ( ETIL ALKOL BAZLi BEYAZ)",
+      "taahhut_kg": 612500.0,
+      "birim_fiyat_usd": 5.25
+    },
+    {
+      "satir_kodu": "24.1.03798.009",
+      "gtip": "32.15.90.70.00.11",
+      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( SIYAH )",
+      "taahhut_kg": 7500.0,
+      "birim_fiyat_usd": 2.25
+    },
+    {
+      "satir_kodu": "24.1.03798.010",
+      "gtip": "32.15.90.70.00.11",
+      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( DIGER )",
+      "taahhut_kg": 50000.0,
+      "birim_fiyat_usd": 2.36
+    },
+    {
+      "satir_kodu": "24.1.03798.011",
+      "gtip": "32.15.90.70.00.11",
+      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( BEYAZ )",
+      "taahhut_kg": 15000.0,
+      "birim_fiyat_usd": 2.25
+    },
+    {
+      "satir_kodu": "24.1.03798.012",
+      "gtip": "32.15.90.70.00.11",
+      "ad": "METIL ALKOL BAZLi iSTAMPA MUREKKEBI ( SEFFAF )",
+      "taahhut_kg": 20000.0,
+      "birim_fiyat_usd": 2.15
+    },
+    {
+      "satir_kodu": "24.1.03798.013",
+      "gtip": "32.08.90.91.00.11",
+      "ad": "DIGER LAKLAR ( BASKi ALTi LAK, PRIMER LAK, BASKi USTU OVER LAK, TERMOKOLON LAK, MAT LAK, VB.)",
+      "taahhut_kg": 15000.0,
+      "birim_fiyat_usd": 6.4
+    },
+    {
+      "satir_kodu": "24.1.03798.014",
+      "gtip": "32.08.90.99.00.11",
+      "ad": "BOYA VE MUREKKEP KATKi MADDELERI ( KAYDiRiCi, MATLASTiRiCi, ADHEZYON KATKiSi, HiZLANDiRiCi, GECIKTIRICI, VB)",
+      "taahhut_kg": 10000.0,
+      "birim_fiyat_usd": 5.85
+    },
+    {
+      "satir_kodu": "24.1.03798.015",
+      "gtip": "38.14.00.90.00.19",
+      "ad": "MUREKKEP INCELTICI ( MiX THiNNER)",
+      "taahhut_kg": 10000.0,
+      "birim_fiyat_usd": 5.25
+    }
+  ],
+  "recipes": {
+    "001": [
+      {
+        "hammadde": "SİYAH (PİGMENT)",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "İSOPORPİL ALKOL",
+        "katsayi": 0.55
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.04
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.16
+      }
+    ],
+    "002": [
+      {
+        "hammadde": "DİĞER",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "İSOPORPİL ALKOL",
+        "katsayi": 0.55
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.04
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.16
+      }
+    ],
+    "003": [
+      {
+        "hammadde": "BEYAZ",
+        "katsayi": 0.4
+      },
+      {
+        "hammadde": "İSOPROPİL ALKOL",
+        "katsayi": 0.46
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.04
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.1
+      }
+    ],
+    "004": [
+      {
+        "hammadde": "ŞEFFAF",
+        "katsayi": 0.0
+      },
+      {
+        "hammadde": "ISOPROPİL ALKOL",
+        "katsayi": 0.71
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.04
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.25
+      }
+    ],
+    "005": [
+      {
+        "hammadde": "(SİYAH) PİGMENT",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "ETİL ALKOL %99",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.1
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.12
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ],
+    "006": [
+      {
+        "hammadde": "(ŞEFFAF) PİGMENT",
+        "katsayi": 0.0
+      },
+      {
+        "hammadde": "ETİL ALKOL %99",
+        "katsayi": 0.35
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.26
+      },
+      {
+        "hammadde": "MELAİK REÇİNE (PASTADA YOK)",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE (PASTADA YOK)",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ],
+    "016": [
+      {
+        "hammadde": "(ŞEFFAF) PİGMENT",
+        "katsayi": 0.0
+      },
+      {
+        "hammadde": "ETİL ALKOL %99",
+        "katsayi": 0.35
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.26
+      },
+      {
+        "hammadde": "MELAİK REÇİNE (PASTADA YOK)",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE (PASTADA YOK)",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ],
+    "007": [
+      {
+        "hammadde": "(RENKLİ) PİGMENT",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "007- ETİL ALKOL DİĞER (RENKLİ)",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.12
+      },
+      {
+        "hammadde": "MELAİK REÇİNE (PASTADA YOK)",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE (PASTADA YOK)",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ],
+    "017": [
+      {
+        "hammadde": "(RENKLİ) PİGMENT",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "007- ETİL ALKOL DİĞER (RENKLİ)",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.12
+      },
+      {
+        "hammadde": "MELAİK REÇİNE (PASTADA YOK)",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE (PASTADA YOK)",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ],
+    "008": [
+      {
+        "hammadde": "(BEYAZ ) PİGMENT",
+        "katsayi": 0.5
+      },
+      {
+        "hammadde": "ETİL ALKOL (BEYAZ ) ETİL ALKOL %99",
+        "katsayi": 0.1
+      },
+      {
+        "hammadde": "/018 ETİL ALKOL (BEYAZ ) ETİL ALKOL %96",
+        "katsayi": 0.04
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.04
+      }
+    ],
+    "018": [
+      {
+        "hammadde": "(BEYAZ ) PİGMENT",
+        "katsayi": 0.5
+      },
+      {
+        "hammadde": "ETİL ALKOL (BEYAZ ) ETİL ALKOL %99",
+        "katsayi": 0.1
+      },
+      {
+        "hammadde": "POLİ ÜRETAN REÇİNE 14.10.2024 SONRASI",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.08
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.04
+      }
+    ],
+    "009": [
+      {
+        "hammadde": "KARBON KARASI (siyah)",
+        "katsayi": 0.3
+      },
+      {
+        "hammadde": "METİL ALKOL",
+        "katsayi": 0.7
+      }
+    ],
+    "010": [
+      {
+        "hammadde": "PIGMENT (diğer renkler)",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "METİL ALKOL",
+        "katsayi": 0.75
+      }
+    ],
+    "011": [
+      {
+        "hammadde": "TiTAN DiOKSiT (beyaz)",
+        "katsayi": 0.45
+      },
+      {
+        "hammadde": "METİL ALKOL",
+        "katsayi": 0.55
+      }
+    ],
+    "012": [
+      {
+        "hammadde": "(ŞEFFAF) PİGMENT",
+        "katsayi": 0.0
+      },
+      {
+        "hammadde": "METİL ALKOL",
+        "katsayi": 0.75
+      },
+      {
+        "hammadde": "NİTRO SELÜLOZ REÇİNE",
+        "katsayi": 0.11
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.07
+      },
+      {
+        "hammadde": "POLİAMİD REÇİNE",
+        "katsayi": 0.07
+      }
+    ],
+    "013": [
+      {
+        "hammadde": "013- BUTANOL",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ALKOL %99",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "POLiAMiD RECINE",
+        "katsayi": 0.2
+      },
+      {
+        "hammadde": "MELAİK REÇİNE",
+        "katsayi": 0.03
+      },
+      {
+        "hammadde": "NiTRO SELULOZ RECINE",
+        "katsayi": 0.12
+      },
+      {
+        "hammadde": "POLİÜRETAN REÇİNE",
+        "katsayi": 0.2
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ],
+    "014": [
+      {
+        "hammadde": "014- POLİETİLEN VAKS",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.35
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.15
+      }
+    ],
+    "015": [
+      {
+        "hammadde": "ETİL ALKOL %99",
+        "katsayi": 0.25
+      },
+      {
+        "hammadde": "ETİL ALKOL %96",
+        "katsayi": 0.05
+      },
+      {
+        "hammadde": "ISOPROPİL ALKOL",
+        "katsayi": 0.3
+      },
+      {
+        "hammadde": "METİL ALKOL",
+        "katsayi": 0.1
+      },
+      {
+        "hammadde": "ETİL ASETAT",
+        "katsayi": 0.1
+      }
+    ]
+  }
+}

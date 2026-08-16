@@ -1,0 +1,16 @@
+# çalışma zamanı verileri — repoya girmez
+data/diib.db
+data/*.db
+uploads/
+.env
+
+# büyük OCR dil dosyaları (kurulumda indirilir — bkz. README)
+data/tessdata/*.traineddata
+
+# python
+__pycache__/
+*.pyc
+venv/
+
+# paketler
+*.tar.gz
